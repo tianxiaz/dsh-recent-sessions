@@ -75,20 +75,20 @@
       "versions": [
         {
           "version": "0.1.0",
-          "publishTimestamp": 1793456510,
+          "publishTimestamp": 1793458038,
           "source": {
             "type": "git",
-            "url": "https://github.com/OWNER/REPO",
-            "commit": "0123456789abcdef0123456789abcdef01234567"
+            "url": "https://github.com/tianxiaz/dsh-recent-sessions",
+            "commit": "fd3b4f60134029260aa534478b0168023d5666b7"
           },
           "engines": {
             "dsh": "^0.2.1-rc.5"
           }
         }
       ],
-      "homepage": "https://github.com/OWNER/REPO",
+      "homepage": "https://github.com/tianxiaz/dsh-recent-sessions",
       "repository": {
-        "url": "https://github.com/OWNER/REPO"
+        "url": "https://github.com/tianxiaz/dsh-recent-sessions"
       }
     }
   ]
