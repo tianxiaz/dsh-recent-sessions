@@ -70,6 +70,11 @@ window.__ModuleLoader__.load({
       'inline.collapse': '收起',
       'inline.drop': '松开即可收藏',
       'inline.favEmpty': '拖到此处或点 ☆ 收藏',
+      'inline.favHint': '拖入或点 ☆ 收藏',
+      'inline.search': '搜索会话',
+      'inline.search.placeholder': '搜索最近会话',
+      'inline.search.clear': '关闭搜索',
+      'inline.search.empty': '没有匹配的会话',
       'inline.collapseAll': '收起',
       'inline.expandAll': '展开',
       'inline.openPanel': '在面板中打开',
@@ -111,6 +116,11 @@ window.__ModuleLoader__.load({
       'inline.collapse': 'Collapse',
       'inline.drop': 'Release to favorite',
       'inline.favEmpty': 'Drag here, or click ☆ to favorite',
+      'inline.favHint': 'Drag in or ☆',
+      'inline.search': 'Search sessions',
+      'inline.search.placeholder': 'Search recent sessions',
+      'inline.search.clear': 'Close search',
+      'inline.search.empty': 'No matching sessions',
       'inline.collapseAll': 'Collapse',
       'inline.expandAll': 'Expand',
       'inline.openPanel': 'Open in panel',
@@ -384,6 +394,7 @@ window.__ModuleLoader__.load({
 
       const decorate = (row) => ({ ...row, time: relativeLabel(row.updatedAt, now, t) });
       return {
+        all: rows.map(decorate),
         favorites: favoriteRows.map(decorate),
         pending: pendingRows.map(decorate),
         running: runningRows.map(decorate),
@@ -1021,6 +1032,48 @@ window.__ModuleLoader__.load({
       );
     }
 
+    /** Search glyph. */
+    function SearchIcon({ size }) {
+      return h(
+        'svg',
+        {
+          viewBox: '0 0 24 24',
+          width: size,
+          height: size,
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1.7,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          'aria-hidden': 'true',
+          focusable: 'false',
+          style: { display: 'block' },
+        },
+        h('circle', { cx: 10.8, cy: 10.8, r: 6.6 }),
+        h('path', { d: 'M15.7 15.7L20 20' }),
+      );
+    }
+
+    /** Small close glyph. */
+    function CloseIcon({ size }) {
+      return h(
+        'svg',
+        {
+          viewBox: '0 0 24 24',
+          width: size,
+          height: size,
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1.8,
+          strokeLinecap: 'round',
+          'aria-hidden': 'true',
+          focusable: 'false',
+          style: { display: 'block' },
+        },
+        h('path', { d: 'M6.5 6.5l11 11M17.5 6.5l-11 11' }),
+      );
+    }
+
     /** Category glyph: running. */
     function PlayIcon({ size }) {
       return h(
@@ -1156,11 +1209,15 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-inline{flex:none;display:flex;flex-direction:column;padding:0 12px 4px 0;margin-bottom:4px;border-bottom:1px solid var(--dsw-alias-border-l1)}
 .drs-sectionHeader{box-sizing:border-box;flex:none;display:flex;align-items:center;gap:4px;height:36px;margin:2px -4px 4px 0;padding-left:4px;color:var(--dsw-alias-label-tertiary);overflow:hidden}
 .drs-inline--drop .drs-sectionHeader{background:var(--dsw-alias-bg-layer-1);border-radius:8px;box-shadow:inset 0 0 0 1px var(--dsw-alias-brand-primary)}
-.drs-sectionToggle{flex:0 1 auto;min-width:0;display:flex;align-items:center;gap:6px;height:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:6px}
+.drs-sectionToggle{flex:0 0 auto;min-width:0;display:flex;align-items:center;gap:6px;height:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:6px}
 .drs-sectionToggle:hover .drs-sectionLabel{color:var(--dsw-alias-label-secondary)}
 .drs-sectionToggle:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
-.drs-sectionLabel{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px}
+.drs-sectionLabel{flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;line-height:20px}
 .drs-sectionCount{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}
+.drs-searchInput{flex:1;min-width:0;height:28px;padding:0 6px;border:.5px solid var(--dsw-alias-border-l4);border-radius:6px;background:none;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;line-height:18px;outline:none}
+.drs-searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}
+.drs-searchInput:focus-visible{border-color:var(--dsw-alias-brand-primary)}
+.drs-projectHint{flex:none;max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:6px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
 .drs-sectionSpacer{flex:1;min-width:4px}
 .drs-headerActions{flex:none;display:flex;align-items:center;gap:4px}
 .drs-headerBtn{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-secondary);cursor:pointer}
@@ -1233,6 +1290,11 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
      * per category (16px glyph that swaps for a disclosure triangle on hover),
      * 32px session rows with a 16px status slot, the shipped 28px overflow row,
      * and the shipped 2px row / 4px group rhythm.
+     *
+     * Expansion is data-driven until the user overrides it: an empty Favorites
+     * starts folded (with a one-line hint), categories that hold sessions needing
+     * the user start expanded, and Recently active starts expanded only while
+     * nothing needs the user. The header's magnifier searches this section.
      */
     function RecentInlineGroup(props) {
       const { t, selectPanel, openSession, toggleFavorite, addFavorite } = props;
@@ -1243,10 +1305,13 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const workspaces = useWorkspaces((snapshot) => snapshot);
       const favorites = useFavorites((list) => list);
       const now = useMinuteTick();
-      const [collapsed, setCollapsed] = useState(() => ({ ...INLINE_START_COLLAPSED }));
+      const [open, setOpen] = useState(readInlineOpen);
+      const [overrides, setOverrides] = useState({});
       const [expanded, setExpanded] = useState({});
       const [dropActive, setDropActive] = useState(false);
-      const [open, setOpen] = useState(readInlineOpen);
+      const [searching, setSearching] = useState(false);
+      const [query, setQuery] = useState('');
+      const searchRef = React.useRef(null);
 
       const workspaceItems = workspaces ? workspaces.items : undefined;
       const archivedIds = workspaces ? workspaces.archivedSessionIds : undefined;
@@ -1310,6 +1375,42 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       ];
       const rendered = categories.filter((category) => category.rows.length > 0 || category.key === 'favorites');
       const attention = groups.pending.length + groups.unread.length;
+      const hasActive = groups.pending.length + groups.running.length + groups.unread.length > 0;
+      const countOf = {
+        favorites: groups.favorites.length,
+        pending: groups.pending.length,
+        running: groups.running.length,
+        unread: groups.unread.length,
+        recent: groups.recent.length,
+      };
+      /** Data-driven default: folded unless it holds something worth showing. */
+      const defaultCollapsed = (key) => {
+        if (key === 'favorites') return groups.favorites.length === 0;
+        if (key === 'recent') return hasActive || groups.recent.length === 0;
+        return countOf[key] === 0;
+      };
+      const isCollapsed = (key) => (overrides[key] === undefined ? defaultCollapsed(key) : overrides[key] === true);
+
+      const matches = useMemo(() => {
+        const needle = query.trim().toLowerCase();
+        const all = groups.all || [];
+        if (!needle) return all.slice(0, 20);
+        const hits = [];
+        for (const row of all) {
+          if (hits.length >= 50) break;
+          const title = row.title ? row.title.toLowerCase() : '';
+          const where = row.where ? row.where.toLowerCase() : '';
+          if (title.indexOf(needle) >= 0 || where.indexOf(needle) >= 0) hits.push(row);
+        }
+        return hits;
+      }, [groups.all, query]);
+
+      useEffect(() => {
+        if (!searching) return undefined;
+        const node = searchRef.current;
+        if (node) node.focus();
+        return undefined;
+      }, [searching]);
 
       const toggleOpen = () => {
         setOpen((value) => {
@@ -1318,8 +1419,19 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           return next;
         });
       };
+      const openSearch = () => {
+        setSearching(true);
+        if (!open) {
+          setOpen(true);
+          writeInlineOpen(true);
+        }
+      };
+      const closeSearch = () => {
+        setQuery('');
+        setSearching(false);
+      };
       const toggleCategory = (key) => {
-        setCollapsed((state) => ({ ...state, [key]: state[key] !== true }));
+        setOverrides((state) => ({ ...state, [key]: !isCollapsed(key) }));
       };
       const toggleOverflow = (key) => {
         setExpanded((state) => ({ ...state, [key]: state[key] !== true }));
@@ -1372,7 +1484,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 
       const renderCategory = (category) => {
         if (category.rows.length === 0 && category.key !== 'favorites') return null;
-        const isCollapsed = collapsed[category.key] === true;
+        const folded = isCollapsed(category.key);
         const isExpanded = expanded[category.key] === true;
         const visible = isExpanded ? category.rows : category.rows.slice(0, category.limit);
         const hidden = category.rows.length - visible.length;
@@ -1386,7 +1498,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               className: 'drs-projectRow',
               role: 'treeitem',
               tabIndex: 0,
-              'aria-expanded': isCollapsed ? 'false' : 'true',
+              'aria-expanded': folded ? 'false' : 'true',
               onClick: () => toggleCategory(category.key),
               onKeyDown: (event) => onKey(event, () => toggleCategory(category.key)),
             },
@@ -1394,17 +1506,21 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             h(
               'span',
               { className: 'drs-glyphSlot drs-chevron', 'aria-hidden': 'true' },
-              h(TriangleIcon, { size: 16, open: !isCollapsed }),
+              h(TriangleIcon, { size: 16, open: !folded }),
             ),
             h('span', { className: 'drs-projectTitle' }, t(category.title)),
-            category.rows.length > 0 ? h('span', { className: 'drs-projectCount' }, String(category.rows.length)) : null,
+            category.rows.length > 0
+              ? h('span', { className: 'drs-projectCount' }, String(category.rows.length))
+              : category.key === 'favorites'
+                ? h('span', { className: 'drs-projectHint' }, t('inline.favHint'))
+                : null,
           ),
-          isCollapsed
+          folded
             ? null
             : category.rows.length === 0
               ? h('div', { className: 'drs-inlineEmpty' }, t(dropActive ? 'inline.drop' : 'inline.favEmpty'))
               : visible.map((row) => renderRow(row)),
-          isCollapsed || hidden === 0
+          folded || hidden === 0
             ? null
             : h(
                 'button',
@@ -1418,6 +1534,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               ),
         );
       };
+
+      const collapsedLabel = t(open ? 'inline.collapseAll' : 'inline.expandAll');
 
       return h(
         'section',
@@ -1445,47 +1563,98 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         h(
           'div',
           { className: 'drs-sectionHeader' },
-          h(
-            'button',
-            {
-              type: 'button',
-              className: 'drs-sectionToggle',
-              'aria-expanded': open ? 'true' : 'false',
-              title: t(open ? 'inline.collapseAll' : 'inline.expandAll'),
-              onClick: toggleOpen,
-            },
-            h('span', { className: 'drs-sectionLabel' }, t('inline.title')),
-            attention > 0 ? h('span', { className: 'drs-sectionCount' }, String(attention)) : null,
-          ),
-          h('span', { className: 'drs-sectionSpacer' }),
-          h(
-            'div',
-            { className: 'drs-headerActions' },
-            h(
-              'button',
-              {
-                type: 'button',
-                className: 'drs-headerBtn',
-                'aria-label': t(open ? 'inline.collapseAll' : 'inline.expandAll'),
-                title: t(open ? 'inline.collapseAll' : 'inline.expandAll'),
-                onClick: toggleOpen,
-              },
-              h(CollapseAllIcon, { size: 16, collapsed: !open }),
-            ),
-            h(
-              'button',
-              {
-                type: 'button',
-                className: 'drs-headerBtn',
-                'aria-label': t('inline.openPanel'),
-                title: t('inline.openPanel'),
-                onClick: () => selectPanel(PANEL_ID),
-              },
-              h(OpenPanelIcon, { size: 16 }),
-            ),
-          ),
+          searching
+            ? [
+                h('input', {
+                  key: 'query',
+                  ref: searchRef,
+                  className: 'drs-searchInput',
+                  type: 'text',
+                  placeholder: t('inline.search.placeholder'),
+                  value: query,
+                  onChange: (event) => setQuery(event.target.value),
+                  onKeyDown: (event) => {
+                    if (event.key === 'Escape') closeSearch();
+                  },
+                }),
+                h(
+                  'button',
+                  {
+                    key: 'close',
+                    type: 'button',
+                    className: 'drs-headerBtn',
+                    'aria-label': t('inline.search.clear'),
+                    title: t('inline.search.clear'),
+                    onClick: closeSearch,
+                  },
+                  h(CloseIcon, { size: 14 }),
+                ),
+              ]
+            : [
+                h(
+                  'button',
+                  {
+                    key: 'title',
+                    type: 'button',
+                    className: 'drs-sectionToggle',
+                    'aria-expanded': open ? 'true' : 'false',
+                    title: collapsedLabel,
+                    onClick: toggleOpen,
+                  },
+                  h('span', { className: 'drs-sectionLabel' }, t('inline.title')),
+                  attention > 0 ? h('span', { className: 'drs-sectionCount' }, String(attention)) : null,
+                ),
+                h('span', { key: 'spacer', className: 'drs-sectionSpacer' }),
+                h(
+                  'div',
+                  { key: 'actions', className: 'drs-headerActions' },
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'drs-headerBtn',
+                      'aria-label': t('inline.search'),
+                      title: t('inline.search'),
+                      onClick: openSearch,
+                    },
+                    h(SearchIcon, { size: 16 }),
+                  ),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'drs-headerBtn',
+                      'aria-label': collapsedLabel,
+                      title: collapsedLabel,
+                      onClick: toggleOpen,
+                    },
+                    h(CollapseAllIcon, { size: 16, collapsed: !open }),
+                  ),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'drs-headerBtn',
+                      'aria-label': t('inline.openPanel'),
+                      title: t('inline.openPanel'),
+                      onClick: () => selectPanel(PANEL_ID),
+                    },
+                    h(OpenPanelIcon, { size: 16 }),
+                  ),
+                ),
+              ],
         ),
-        open ? h('div', { className: 'drs-groups' }, rendered.map(renderCategory)) : null,
+        open
+          ? searching
+            ? h(
+                'div',
+                { className: 'drs-groups' },
+                matches.length === 0
+                  ? h('div', { className: 'drs-inlineEmpty' }, t('inline.search.empty'))
+                  : matches.map((row) => renderRow(row)),
+              )
+            : h('div', { className: 'drs-groups' }, rendered.map(renderCategory))
+          : null,
       );
     }
 

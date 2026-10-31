@@ -28,10 +28,12 @@ It takes over the left column shell, so the group sits **above the workspace gro
 └──────────────────────────────────────┘
 ```
 
-- The **section header** matches the official section header: 36px tall, 14px/20 `label-tertiary`, 4px left padding; the title is clickable, and two 28×28 icon actions sit on the right (collapse/expand, open in the panel).
+- The **section header** matches the official section header: 36px tall, 14px/20 `label-tertiary`, 4px left padding, with the title always fully visible; the title is clickable, and three 28×28 icon actions sit on the right (search sessions, collapse/expand, open in the panel).
   - **Collapse to one line**: clicking the title (or Collapse) folds the whole block into a single 36px row, giving the workspace list its full height back; the choice is remembered in the browser.
   - The panel page no longer takes a row in the sidebar's panel list (it duplicated the section); open it from the ⤢ action instead.
+- **Search in place**: the 🔍 action turns the title row into an input and filters this section's sessions by title or workspace; `Esc` or × closes it (results update as you type).
 - Each **category** is a workspace-style project row: 34px tall, 16×20 glyph slot, 14px/20 title, a filled triangle that takes the glyph's place on hover, click to fold, plus a 10px count.
+  - **Defaults follow the data**: an empty Favorites starts folded with a "Drag in or ☆" hint on the right; categories that hold sessions waiting for you, running, or unread start expanded and Recently active starts folded; when none of those hold anything, Recently active starts expanded. A manual fold/expand of a category wins from then on.
 - Each **session row** matches the shipped row: 32px tall, status dot in the 16×20 slot, 14px/20 title, 10px relative time; on hover the time yields to the ☆ star; the session open in the main column keeps the selected background.
 - The **overflow row** is the shipped `Show N more sessions / Collapse` (28px, 12px, `label-tertiary`).
 - 2px between rows and 4px between groups, the same rhythm as the official list; a 1px divider separates this section from Workspaces.
