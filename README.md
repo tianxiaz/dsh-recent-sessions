@@ -47,10 +47,10 @@ Favorites keep their display order and are stored in the browser (see Data).
 **From the plugin market (recommended)**: Plugins → Discover → **Add index source** and paste
 
 ```
-https://raw.githubusercontent.com/tianxiaz/dsh-recent-sessions/main/market/index.json
+https://cdn.jsdelivr.net/gh/tianxiaz/dsh-recent-sessions@main/market/index.json
 ```
 
-(GitHub Pages alternative once enabled: `https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`)
+> `raw.githubusercontent.com` is unreachable on some networks, so the index is served through jsDelivr; once GitHub Pages is enabled, `https://tianxiaz.github.io/dsh-recent-sessions/market/index.json` also works.
 
 **Command line**:
 

@@ -81,18 +81,27 @@ npm run market -- --source git \
 git add market && git commit -m "market: index for 0.1.0" && git push
 ```
 
-### A4. 让索引有 https 地址（二选一）
+### A4. 让索引有 https 地址（三选一）
 
-**GitHub Pages（推荐，返回正确的 `application/json`）**
+**jsDelivr CDN（国内网络推荐；`raw.githubusercontent.com` 常被墙）**
 
-仓库 → Settings → Pages → Build and deployment：Source = *Deploy from a branch*，Branch = `main` / `/ (root)` → Save。
-等 1 分钟，索引 URL 为：
+仓库推上去即可用，无需任何设置：
+
+```
+https://cdn.jsdelivr.net/gh/<owner>/dsh-recent-sessions@main/market/index.json
+```
+
+更新索引后想让 CDN 立刻刷新：打开 `https://purge.jsdelivr.net/gh/<owner>/dsh-recent-sessions@main/market/index.json`。
+
+**GitHub Pages（海外/自有域名，返回正确的 `application/json`）**
+
+仓库 → Settings → Pages → Source = *Deploy from a branch*，Branch = `main` / `/ (root)` → Save。约 1 分钟后：
 
 ```
 https://<owner>.github.io/dsh-recent-sessions/market/index.json
 ```
 
-**raw（最快，返回 text/plain 也能被解析）**
+**raw（海外网络）**
 
 ```
 https://raw.githubusercontent.com/<owner>/dsh-recent-sessions/main/market/index.json

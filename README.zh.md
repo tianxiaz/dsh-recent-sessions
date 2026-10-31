@@ -47,10 +47,10 @@
 **插件市场（推荐）**：Plugins → Discover → **Add index source**，粘贴下面的索引地址，然后在卡片上点安装：
 
 ```
-https://raw.githubusercontent.com/tianxiaz/dsh-recent-sessions/main/market/index.json
+https://cdn.jsdelivr.net/gh/tianxiaz/dsh-recent-sessions@main/market/index.json
 ```
 
-（启用 GitHub Pages 后也可以用它自己的地址：`https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`）
+> 国内网络常访问不到 `raw.githubusercontent.com`，所以索引用 jsDelivr CDN；启用 GitHub Pages 后也可以换成 `https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`。
 
 **命令行**：
 
