@@ -83,15 +83,15 @@ git add market && git commit -m "market: index for 0.1.0" && git push
 
 ### A4. 让索引有 https 地址（三选一）
 
-**jsDelivr CDN（国内网络推荐；`raw.githubusercontent.com` 常被墙）**
+**jsDelivr CDN（国内网络推荐；`raw.githubusercontent.com` 常被墙。注意用 `fastly.` / `gcore.` 节点，`cdn.jsdelivr.net` 在部分线路会超时）**
 
 仓库推上去即可用，无需任何设置：
 
 ```
-https://cdn.jsdelivr.net/gh/<owner>/dsh-recent-sessions@main/market/index.json
+https://fastly.jsdelivr.net/gh/<owner>/dsh-recent-sessions@main/market/index.json
 ```
 
-更新索引后想让 CDN 立刻刷新：打开 `https://purge.jsdelivr.net/gh/<owner>/dsh-recent-sessions@main/market/index.json`。
+更新索引后想让 CDN 立刻刷新：打开 `https://purge.jsdelivr.net/gh/<owner>/dsh-recent-sessions@main/market/index.json`（备用节点：`https://gcore.jsdelivr.net/gh/<owner>/dsh-recent-sessions@main/market/index.json`）。
 
 **GitHub Pages（海外/自有域名，返回正确的 `application/json`）**
 
