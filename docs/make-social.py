@@ -28,9 +28,9 @@ d.text(((x + 16) * S, (y + 8) * S), 'DeepSeek Harness 插件', font=f(14), fill=
 y += 62
 d.text((x * S, y * S), '最近会话', font=f(52, True), fill=ink)
 y += 78
-for line in ('像官方「工作区」一样长在左侧栏里，', '一屏直达该处理、常回访的会话。'):
+for line in ('像官方「工作区」一样长在', '左侧栏里的「最近会话」：', '一屏直达该处理、常回访的会话。'):
     d.text((x * S, y * S), line, font=f(22), fill=muted)
-    y += 34
+    y += 30
 y += 26
 for item in ('每个会话行 ☆ 一点即收藏', '整段一键收起到一行', '标题右侧就地搜索', '官方会话区原样保留'):
     d.ellipse([x * S, (y + 9) * S, (x + 8) * S, (y + 17) * S], fill=accent)
@@ -39,22 +39,21 @@ for item in ('每个会话行 ☆ 一点即收藏', '整段一键收起到一行
 y = H - 70
 d.text((x * S, y * S), 'github.com/tianxiaz/dsh-recent-sessions', font=f(14), fill=faint)
 
-# right: a legible crop of the sidebar (top part), rounded
-shot = Image.open('docs/preview-light.png').convert('RGB')
-crop = shot.crop((14, 14, 372, 712))          # sidebar panel only, top part
-target_h = 620
-ratio = target_h / crop.height
-crop = crop.resize((int(crop.width * ratio), target_h), Image.LANCZOS)
-mask = Image.new('L', crop.size, 0)
-ImageDraw.Draw(mask).rounded_rectangle([0, 0, crop.width - 1, crop.height - 1], radius=10 * S, fill=255)
-sx = W - crop.width - 96
+# right: a desktop window mock (sidebar + conversation)
+shot = Image.open('docs/preview-desktop-light.png').convert('RGB')
+target_w = 800                                   # logical width
+target_h = int(shot.height * target_w / shot.width)
+shot = shot.resize((target_w * S, target_h * S), Image.LANCZOS)
+mask = Image.new('L', shot.size, 0)
+ImageDraw.Draw(mask).rounded_rectangle([0, 0, shot.width - 1, shot.height - 1], radius=12 * S, fill=255)
+sx = W - target_w - 40
 sy = (H - target_h) // 2
 # soft shadow + border
-d.rounded_rectangle([(sx - 3) * S, (sy - 3) * S, (sx + crop.width + 3) * S, (sy + target_h + 3) * S],
-                    radius=13 * S, fill='#eceff3')
-d.rounded_rectangle([(sx - 1) * S, (sy - 1) * S, (sx + crop.width + 1) * S, (sy + target_h + 1) * S],
-                    radius=11 * S, outline='#e3e6ea', width=1 * S)
-img.paste(crop, (sx * S, sy * S), mask)
+d.rounded_rectangle([(sx - 4) * S, (sy - 4) * S, (sx + target_w + 4) * S, (sy + target_h + 4) * S],
+                    radius=14 * S, fill='#e6eaef')
+d.rounded_rectangle([(sx - 1) * S, (sy - 1) * S, (sx + target_w + 1) * S, (sy + target_h + 1) * S],
+                    radius=13 * S, outline='#e3e6ea', width=1 * S)
+img.paste(shot, (sx * S, sy * S), mask)
 
 img.resize((W, H), Image.LANCZOS).save('docs/social-preview.png')
 print('wrote docs/social-preview.png', (W, H))
