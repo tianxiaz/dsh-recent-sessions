@@ -1,11 +1,16 @@
 # Recent Sessions · dsh-recent-sessions
 
 > A **Recent sessions** section that lives in the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) left sidebar exactly like the official Workspaces — favorites, running, waiting-for-you, unread completions and recently active sessions at a glance;
-> **collapse it to one line** when you need the room, and **search it in place** from the magnifier in its header.
+> **collapse it to one line** when you need the room, **search it in place** from the magnifier, and **favorite any session with the ☆ on its row**.
 
 It shares the official **Workspaces** grid and interactions (36px section header / 34px project row / 32px session row / 28px overflow row), so it reads as part of the sidebar: no extra page, no floating panel, and not one change to the official session browser.
 
-**Nice touches**: the whole block folds into a single line (with the choice remembered) and the magnifier turns the header into an input that searches this section by title or workspace; a category you folded or expanded by hand keeps that state across hard reloads.
+**Nice touches**:
+
+- **every session row carries a ☆** — the official list included — so favoriting is one hover-click anywhere, no drag and no need to open the session;
+- the whole block folds into a single line (with the choice remembered);
+- the magnifier turns the header into an input that searches this section by title or workspace;
+- a category you folded or expanded by hand keeps that state across hard reloads.
 
 **The problem it solves**: with a few tasks in flight, "what is running, what finished and I haven't read, what is waiting for my approval or answer, and which ones do I keep coming back to" takes a lot of scrolling. This section pins **favorites / running / waiting for you / unread completions / recently active** to the top, with yellow-blue-green status dots, so the next click is obvious — and favoriting is either a ☆ click or dragging the session row onto Favorites.
 

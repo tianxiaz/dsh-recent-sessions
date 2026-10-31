@@ -53,8 +53,8 @@ const plugins = {
   name: manifest.name,
   title: { en: 'Recent Sessions', zh: '最近会话' },
   description: {
-    en: 'A Workspaces-native Recent sessions section in the left sidebar: favorites, running, waiting-for-you and unread sessions at a glance, with status dots, drag-to-favorite, one-line collapse and in-section search.',
-    zh: '像官方「工作区」一样融入左侧栏的「最近会话」分区：收藏、运行中、等待你的回应、完成未读、最近活跃一屏直达，黄/蓝/绿状态点 + 拖拽收藏，可一键收起到一行、支持分区内搜索，官方会话区完全不变。',
+    en: 'A Workspaces-native Recent sessions section in the left sidebar: favorites, running, waiting-for-you and unread sessions at a glance, with a one-click ☆ on every session row, status dots, one-line collapse and in-section search.',
+    zh: '像官方「工作区」一样融入左侧栏的「最近会话」分区：收藏、运行中、等待你的回应、完成未读、最近活跃一屏直达；每个会话行一个 ☆ 一键收藏，黄/蓝/绿状态点、可一键收起到一行、支持分区内搜索，官方会话区完全不变。',
   },
   icon: 'icon.svg',
   metadata: {
