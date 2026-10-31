@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Recent Sessions",
-    "description": "A Recent sessions section that sits in the DSH left sidebar exactly like the official Workspaces: favorites, running, waiting-for-you, unread completions and recently active sessions at a glance, with status dots and drag-to-favorite."
+    "description": "A Recent sessions section that sits in the DSH left sidebar exactly like the official Workspaces: favorites, running, waiting-for-you, unread and recently active sessions at a glance, with status dots, drag-to-favorite, one-line collapse and in-section search."
   }
 }
