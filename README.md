@@ -18,23 +18,13 @@ It takes over the left column shell, so the group sits **above the workspace gro
 
 ## What it looks like
 
-```
-┌──────────────────────────────────────┐
-│  Recent sessions              [fold] [⤢]│  ← 36px section header, 28px actions
-│    ★ Favorites                    5   │  ← 34px project row: glyph x=20, title x=40
-│       ● Customer proposal   2 h ago ☆ │  ← 32px session row: dot x=32, title x=52
-│       Show 2 more sessions            │  ← the shipped 28px overflow row
-│    ⚠ Waiting for you              1   │
-│       ● Fix login timeout        now  │
-│    ▶ Running                      1   │  (collapsed by default)
-│    ✓ Unread completions            1   │
-│    🕒 Recently active              5   │  (collapsed by default)
-├──────────────────────────────────────┤  ← 1px divider
-│  Workspaces                [view] [+ ] │  ← the official section, untouched
-│    📁 Workspace A                     │
-│       ● …                             │
-└──────────────────────────────────────┘
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/preview-light.png">
+  <img alt="Recent Sessions: a left-sidebar section on the official Workspaces grid" src="docs/preview-light.png" width="880">
+</picture>
+
+<sub>Illustration with demo data, not real sessions</sub>
 
 - The **section header** matches the official section header: 36px tall, 14px/20 `label-tertiary`, 4px left padding, with the title always fully visible; the title is clickable, and three 28×28 icon actions sit on the right (search sessions, collapse/expand, open in the panel).
   - **Collapse to one line**: clicking the title (or Collapse) folds the whole block into a single 36px row, giving the workspace list its full height back; the choice is remembered in the browser.
