@@ -723,6 +723,10 @@ window.__ModuleLoader__.load({
     const INLINE_START_COLLAPSED = { favorites: false, pending: false, unread: false, running: true, recent: true };
     /** Persisted "collapsed to one line" state of the whole section. */
     const INLINE_OPEN_KEY = 'dsh.recent-sessions.inline.open.v1';
+    /** Persisted per-category fold overrides (the user's explicit choices). */
+    const INLINE_CATS_KEY = 'dsh.recent-sessions.cats.v1';
+    /** Categories whose fold state may be remembered. */
+    const INLINE_CATEGORY_KEYS = ['favorites', 'pending', 'running', 'unread', 'recent'];
     /** Collapse transition length, matching the shipped sidebar shell. */
     const SHELL_COLLAPSE_MS = 300;
 
@@ -1273,6 +1277,33 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       }
     }
 
+    /** Read the per-category fold overrides; unknown keys and non-booleans are dropped. */
+    function readCategoryOverrides() {
+      try {
+        const raw = window.localStorage.getItem(INLINE_CATS_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return {};
+        const overrides = {};
+        for (const key of INLINE_CATEGORY_KEYS) {
+          const value = parsed[key];
+          if (typeof value === 'boolean') overrides[key] = value;
+        }
+        return overrides;
+      } catch (error) {
+        return {};
+      }
+    }
+
+    /** Remember one category's fold choice. */
+    function writeCategoryOverrides(overrides) {
+      try {
+        window.localStorage.setItem(INLINE_CATS_KEY, JSON.stringify(overrides));
+      } catch (error) {
+        /* storage may be unavailable; the in-memory state still works */
+      }
+    }
+
     /** Remember the inline section's disclosure state. */
     function writeInlineOpen(open) {
       try {
@@ -1306,7 +1337,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const favorites = useFavorites((list) => list);
       const now = useMinuteTick();
       const [open, setOpen] = useState(readInlineOpen);
-      const [overrides, setOverrides] = useState({});
+      const [overrides, setOverrides] = useState(readCategoryOverrides);
       const [expanded, setExpanded] = useState({});
       const [dropActive, setDropActive] = useState(false);
       const [searching, setSearching] = useState(false);
@@ -1383,9 +1414,9 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         unread: groups.unread.length,
         recent: groups.recent.length,
       };
-      /** Data-driven default: folded unless it holds something worth showing. */
+      /** Data-driven default: Favorites always starts folded; the other groups fold when empty. */
       const defaultCollapsed = (key) => {
-        if (key === 'favorites') return groups.favorites.length === 0;
+        if (key === 'favorites') return true;
         if (key === 'recent') return hasActive || groups.recent.length === 0;
         return countOf[key] === 0;
       };
@@ -1431,7 +1462,11 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         setSearching(false);
       };
       const toggleCategory = (key) => {
-        setOverrides((state) => ({ ...state, [key]: !isCollapsed(key) }));
+        setOverrides((state) => {
+          const next = { ...state, [key]: !isCollapsed(key) };
+          writeCategoryOverrides(next);
+          return next;
+        });
       };
       const toggleOverflow = (key) => {
         setExpanded((state) => ({ ...state, [key]: state[key] !== true }));

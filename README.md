@@ -33,7 +33,8 @@ It takes over the left column shell, so the group sits **above the workspace gro
   - The panel page no longer takes a row in the sidebar's panel list (it duplicated the section); open it from the ⤢ action instead.
 - **Search in place**: the 🔍 action turns the title row into an input and filters this section's sessions by title or workspace; `Esc` or × closes it (results update as you type).
 - Each **category** is a workspace-style project row: 34px tall, 16×20 glyph slot, 14px/20 title, a filled triangle that takes the glyph's place on hover, click to fold, plus a 10px count.
-  - **Defaults follow the data**: an empty Favorites starts folded with a "Drag in or ☆" hint on the right; categories that hold sessions waiting for you, running, or unread start expanded and Recently active starts folded; when none of those hold anything, Recently active starts expanded. A manual fold/expand of a category wins from then on.
+  - **Defaults**: Favorites **always starts folded** (with a "Drag in or ☆" hint while empty, and its count while it holds sessions); categories holding sessions waiting for you, running, or unread start expanded while Recently active starts folded; when none of those hold anything, Recently active starts expanded.
+  - **Your fold choices are remembered**: once you fold or expand a category by hand, that choice is stored in `localStorage` and **restored after a hard reload or a later visit** — including "Favorites is expanded".
 - Each **session row** matches the shipped row: 32px tall, status dot in the 16×20 slot, 14px/20 title, 10px relative time; on hover the time yields to the ☆ star; the session open in the main column keeps the selected background.
 - The **overflow row** is the shipped `Show N more sessions / Collapse` (28px, 12px, `label-tertiary`).
 - 2px between rows and 4px between groups, the same rhythm as the official list; a 1px divider separates this section from Workspaces.
@@ -109,7 +110,7 @@ Consequences:
 ## Data and privacy
 
 - Client-only plugin: **no network requests** of its own.
-- Favorites and the group's disclosure state live in the current browser's `localStorage`: `dsh.recent-sessions.favorites.v1` (session ids in display order) and `dsh.recent-sessions.inline.open.v1`.
+- Favorites, the section's one-line state and each category's fold choice live in the current browser's `localStorage`: `dsh.recent-sessions.favorites.v1` (session ids in display order), `dsh.recent-sessions.inline.open.v1` (section folded to one line or not) and `dsh.recent-sessions.cats.v1` (per-category fold choices).
 - Archived sessions are not listed (their favorite entries are kept and return when unarchived); favorites are per origin, so another browser or host does not share them.
 
 ## License
