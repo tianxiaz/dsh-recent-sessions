@@ -1,126 +1,129 @@
-# Recent Sessions · dsh-recent-sessions
+# 最近会话 · dsh-recent-sessions
 
-> A **Recent sessions** section that lives in the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) left sidebar exactly like the official Workspaces — favorites, running, waiting-for-you, unread completions and recently active sessions at a glance;
-> **collapse it to one line** when you need the room, **search it in place** from the magnifier, and **favorite any session with the ☆ on its row**.
+<sub>中文 · <a href="README.en.md">English</a></sub>
+
+> 像官方「工作区」一样长在左侧栏里的「最近会话」—— 收藏、运行中、等待你的回应、完成未读、最近活跃，一屏直达；
+> 不用时**一键收起到一行**，标题右侧 🔍 还能**就地搜索**，**每个会话行都有 ☆ 一点即收藏**。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="docs/preview-light.png">
-  <img alt="Recent Sessions: a left-sidebar section on the official Workspaces grid" src="docs/preview-light.png" width="880">
+  <img alt="最近会话：与官方「工作区」同一套网格的左侧栏分区" src="docs/preview-light.png" width="880">
 </picture>
 
-<sub>Illustration with demo data, not real sessions</sub>
+<sub>示意图：演示数据，非真实会话</sub>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/preview-collapsed-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="docs/preview-collapsed-light.png">
-  <img alt="Folded: a single 36px row, Workspaces gets its height back" src="docs/preview-collapsed-light.png" width="620">
+  <img alt="收起态：整段只剩一行，工作区拿回全部高度" src="docs/preview-collapsed-light.png" width="620">
 </picture>
 
-<sub>Folded: the whole block is one 36px row; click the title to expand and the choice is remembered — Workspaces gets its height back right away</sub>
+<sub>收起态：整段只剩一行（36px），点标题随时展开，选择会被记住；工作区立即拿回全部高度</sub>
 
-🌐 **Landing page** (illustrations + install entry): <https://tianxiaz.github.io/dsh-recent-sessions/>
+🌐 **落地页 / 在线说明**：<https://tianxiaz.github.io/dsh-recent-sessions/>
 
-It shares the official **Workspaces** grid and interactions (36px section header / 34px project row / 32px session row / 28px overflow row), so it reads as part of the sidebar: no extra page, no floating panel, and not one change to the official session browser.
+给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**左侧栏**加一个「最近会话」分区。它和官方「工作区」共用同一套网格与交互（36px 分区标题 / 34px 分组行 / 32px 会话行 / 28px 溢出行），看起来就是官方侧边栏的一部分：不另开页面、不是悬浮面板，也不改变官方会话浏览区的任何行为。
 
-**Nice touches**:
+**顺手的地方**：
 
-- **every session row carries a ☆** — the official list included — so favoriting is one hover-click anywhere, no drag and no need to open the session;
-- the whole block folds into a single line (with the choice remembered);
-- the magnifier turns the header into an input that searches this section by title or workspace;
-- a category you folded or expanded by hand keeps that state across hard reloads.
+- **每个会话行都带 ☆**——包括官方的会话列表，悬停即可一键收藏 / 取消，不用打开会话、也不用拖拽；
+- 整段可以收起到一行（不占工作区列表的高度，选择会被记住）；
+- 标题右侧的 🔍 直接把标题行变成输入框，在这个分区里按标题 / 工作区搜索会话；
+- 对某个分类手动展开或收起后，硬刷新也会保持你的选择。
 
-**The problem it solves**: with a few tasks in flight, "what is running, what finished and I haven't read, what is waiting for my approval or answer, and which ones do I keep coming back to" takes a lot of scrolling. This section pins **favorites / running / waiting for you / unread completions / recently active** to the top, with yellow-blue-green status dots, so the next click is obvious — and favoriting is either a ☆ click or dragging the session row onto Favorites.
+**它解决什么问题**：任务一多，「哪个在跑、哪个跑完了还没看、哪个在等我授权或回答、我常回访的是哪几个」就得在会话列表里翻半天。这个分区把 **收藏 / 运行中 / 等待你的回应 / 完成未读 / 最近活跃** 五类固定在最上面，配黄 / 蓝 / 绿状态点，一眼就知道下一步该点哪里；收藏可以点 ☆，也可以把会话行直接拖进「收藏」分组。
 
-It takes over the left column shell, so the group sits **above the workspace groups** instead of living on its own page, and the official session browser (search, session `…` menu, drag reorder, archived filter, workspace management) keeps working unchanged inside it.
+它以插件形式接管左侧栏外壳，因此这个分组**就在工作区分组上方**，而不是另开一个页面；官方会话浏览区（搜索、会话 `…` 菜单、拖拽排序、归档筛选、工作区增删改）原样保留、原样工作。
 
-## Layout details
+## 视觉与交互细节
 
-- The **section header** matches the official section header: 36px tall, 14px/20 `label-tertiary`, 4px left padding, with the title always fully visible; the title is clickable, and three 28×28 icon actions sit on the right (search sessions, collapse/expand, open in the panel).
-  - **Collapse to one line**: clicking the title (or Collapse) folds the whole block into a single 36px row, giving the workspace list its full height back; the choice is remembered in the browser.
-  - The panel page no longer takes a row in the sidebar's panel list (it duplicated the section); open it from the ⤢ action instead.
-- **Search in place**: the 🔍 action turns the title row into an input and filters this section's sessions by title or workspace; `Esc` or × closes it (results update as you type).
-- Each **category** is a workspace-style project row: 34px tall, 16×20 glyph slot, 14px/20 title, a filled triangle that takes the glyph's place on hover, click to fold, plus a 10px count.
-  - **Defaults**: Favorites **always starts folded** (with a "Drag in or ☆" hint while empty, and its count while it holds sessions); categories holding sessions waiting for you, running, or unread start expanded while Recently active starts folded; when none of those hold anything, Recently active starts expanded.
-  - **Your fold choices are remembered**: once you fold or expand a category by hand, that choice is stored in `localStorage` and **restored after a hard reload or a later visit** — including "Favorites is expanded".
-- Each **session row** matches the shipped row: 32px tall, status dot in the 16×20 slot, 14px/20 title, 10px relative time; on hover the time yields to the ☆ star; the session open in the main column keeps the selected background.
-- The **overflow row** is the shipped `Show N more sessions / Collapse` (28px, 12px, `label-tertiary`).
-- 2px between rows and 4px between groups, the same rhythm as the official list; a 1px divider separates this section from Workspaces.
+- **分区标题**与「工作区」同规格：高 36px、14px/20、`label-tertiary`、左侧 4px 内边距，标题完整显示不截断；标题可点击，右侧三个 28×28 图标动作：`搜索会话`、`收起/展开`、`在面板中打开`。
+  - **一键收起到一行**：点标题（或「收起」）整段折叠成一行 36px，工作区列表立刻拿回全部高度；状态记在浏览器里，下次打开保持。
+  - 面板页不再占用左侧面板列表的一行（它与分区重复），需要时点标题右侧的 ⤢ 打开。
+- **分区内搜索**：点标题右侧的 🔍 直接把标题行变成输入框，按会话标题 / 工作区名筛选本分区里的会话；`Esc` 或 × 退出，`Enter` 无效（边打边筛）。
+- **分类**与工作区分组行同规格：高 34px、16×20 图标槽、标题 14px/20；**悬停时图标换成实心三角**，点击折叠/展开；右侧显示 10px 数量。
+  - **默认展开规则**：**收藏永远默认收起**（为空时右侧显示「拖入或点 ☆ 收藏」，非空时显示数量）；有「等待你的回应 / 运行中 / 完成未读」时，这些分类默认展开、最近活跃默认收起；三类都没有时，最近活跃默认展开。
+  - **你的折叠选择会被记住**：一旦手动展开/收起了某个分类，该选择写入 `localStorage`，**硬刷新或重开页面后都会恢复**（包括"收藏是展开的"这个状态）。
+- **会话行**与官方会话行同规格：高 32px、状态点占 16×20 槽、标题 14px/20、右侧 10px 相对时间；**悬停时隐藏时间、浮出 ☆**；当前打开的会话常驻选中底色。
+- **溢出行**沿用官方 `展开其余 N 个会话 / 收起`（28px、12px、`label-tertiary`）。
+- 行间距 2px、分组间距 4px，与官方列表同一套节奏；分类之间与工作区之间用 1px 分隔线区隔。
 
-## Favorites
+## 收藏
 
-Three ways:
+三种方式：
 
-1. click the `☆` on a session row (a new hover button in the shipped row strip);
-2. **drag** a session row onto the Recent sessions group (from the official list below);
-3. open the panel page from the ⤢ action on the section header, then drop onto Favorites, or onto an existing favorite to reorder.
+1. 会话行悬停时点 `☆`（官方会话行上的新增按钮）；
+2. 把会话行**拖进「最近会话」分组**（从下面官方列表直接拖上来即可）；
+3. 点分区标题右侧的 ⤢ 打开面板页，在里面拖到「收藏」区，或拖到某条收藏上调整顺序。
 
-Favorites keep their display order and are stored in the browser (see Data).
+收藏顺序即展示顺序，保存在本机浏览器（见「数据」）。
 
-## Install
+## 安装
 
-**From the plugin market (recommended)**: Plugins → Discover → **Add index source** and paste
+**插件市场（推荐）**：Plugins → Discover → **Add index source**，粘贴下面的索引地址，然后在卡片上点安装：
 
 ```
 https://tianxiaz.github.io/dsh-recent-sessions/market/index.json
 ```
 
-> GitHub Pages caches for about 10 minutes, so a release shows up quickly. If that host is unreachable on your network, use the jsDelivr mirror (branch cache ~12 hours):
+> GitHub Pages 缓存约 10 分钟，发版后很快生效。若该地址在你所在网络不通，可换用 jsDelivr 镜像（分支缓存约 12 小时）：
 > `https://fastly.jsdelivr.net/gh/tianxiaz/dsh-recent-sessions@main/market/index.json`
 
-**Command line**:
+**命令行**：
 
 ```bash
-dsh plugin --profile <profile> add "git+https://github.com/tianxiaz/dsh-recent-sessions.git"
+dsh plugin --profile <你的 profile> add "git+https://github.com/tianxiaz/dsh-recent-sessions.git"
 ```
 
-**From a local directory** (development):
+**本地目录**（开发/自用）：
 
 ```
-plugin_manager install_bundle  <absolute path>/dsh-recent-sessions
+plugin_manager install_bundle  <绝对路径>/dsh-recent-sessions
 ```
 
-Reload the Web page afterwards (hard reload).
+安装后**硬刷新页面**即可。
 
-## ⚠️ Sidebar takeover
+## ⚠️ 侧栏接管说明（重要）
 
-Both key seats of the left column are **single-occupant slots**, so a plugin cannot insert a section beside the shipped groups:
+DSH 左侧栏的两个关键位都是**单占位槽**，插件无法"在官方分组旁边插入一节"：
 
-| Slot | Shipped occupant | What it is |
+| 槽 | 官方占用者 | 性质 |
 |---|---|---|
-| `sidebar` | `@deepseek-ai/dsh-client-ui-sidebar` SidebarRoot | the whole left column shell (brand row, New session, panel list, foot) |
-| `sidebar.workspaces` | `@deepseek-ai/dsh-client-ui-workspace` WorkspaceBrowser | the session browsing region |
+| `sidebar` | `@deepseek-ai/dsh-client-ui-sidebar` 的 SidebarRoot | 整个左列外壳（品牌行、新会话、面板列表、页脚） |
+| `sidebar.workspaces` | `@deepseek-ai/dsh-client-ui-workspace` 的 WorkspaceBrowser | 会话浏览区 |
 
-So this plugin **owns the shell and reuses the browser**:
+所以本插件的做法是：**接管外壳、复用会话区**。
 
-- its bundle patch disables `ui-sidebar` (`- id: ui-sidebar` + `disabled: true`);
-- it registers the `sidebar` seat and declares the same eight child slots (`brand.mark`, `brand.name`, `toggle.badge`, `panellist`, `panellist.actions`, `workspaces`, `settings`, `footer.action`), then renders the official WorkspaceBrowser through `sidebar.workspaces` unchanged;
-- it also provides `shell.leading` (the "open sidebar / new session" window chrome the frame mounts on macOS while the sidebar is fully collapsed) — without it a collapsed sidebar could not be reopened.
+- bundle patch 里 `- id: ui-sidebar` + `disabled: true`，禁用官方外壳；
+- 本插件注册 `sidebar` 占位，声明与官方**同名**的 8 个子槽（`brand.mark` / `brand.name` / `toggle.badge` / `panellist` / `panellist.actions` / `workspaces` / `settings` / `footer.action`），并把 `sidebar.workspaces` **原样渲染**官方 WorkspaceBrowser；
+- 同时提供 `shell.leading`（macOS 侧栏完全收起时的"打开侧栏 / 新会话"两个窗口按钮），否则收起后无处点开。
 
-Consequences:
+这意味着：
 
-- the brand row, New session button, panel list and foot are rendered by this plugin (geometry and colors aligned with the shipped shell, **not pixel-identical**);
-- if DSH changes its sidebar, this plugin needs a matching update (see below);
-- to revert, disable or remove the bundle: the official sidebar returns (the panel page and the `☆` button go away with it).
+- 品牌行、新会话按钮、面板图标列表、页脚由本插件渲染（几何与配色对齐官方，但**不是逐像素一致**）；
+- DSH 官方侧栏以后若改动，本插件需要同步更新（见下）；
+- 不想要了，禁用/卸载本 bundle 即可恢复官方侧栏（会同时失去面板页与 `☆` 按钮）。
 
-## Compatibility and maintenance
+## 兼容性与维护
 
-- Target: DSH `^0.2.1-rc.5` (`engines.dsh`).
-- Known failure mode: if a DSH release **renames or drops** the `ui-sidebar` row id, the patch is warned about and skipped, this plugin's `sidebar` registration then collides with the shipped shell and the whole plugin stays inactive (the official UI is untouched). Fix: update the row id in `cordis.patch.yml` and re-align the shell if needed.
-- Post-upgrade checklist (all in the `sidebar shell` region of `client.js`):
-  1. are the `sidebar` owner props still `{ collapsed, width }`;
-  2. is the declared child set still those eight slots;
-  3. did the shipped `SidebarRoot` geometry change (logo row 60/36px, new-session 38/36px, panel row 36px, collapsed padding 18/10/6) → update `SHELL_CSS`;
-  4. owner props of `sidebar.panellist` (`size`/`active`) and `sidebar.workspaces` (`wide`/`expandSidebar`);
-  5. `shell.leading` mount condition (macOS + collapsed);
-  6. whether the official browser is still a single occupant of `sidebar.workspaces`.
+- 目标版本：DSH `^0.2.1-rc.5`（`engines.dsh`）。
+- 已知失败模式：若某版 DSH 里 `ui-sidebar` 这个行 **id 改名或消失**，patch 会 warn + skip，本插件注册 `sidebar` 时与官方外壳冲突 → 本插件整体不生效（官方 UI 保持不变）。修复：更新 `cordis.patch.yml` 里的行 id、必要时重新对齐外壳。
+- 升级 DSH 后的核对清单（都在 `client.js` 的 `sidebar shell` 区）：
+  1. `sidebar` 槽的 owner props 是否仍是 `{ collapsed, width }`；
+  2. 需要声明/渲染的子槽集合是否仍是那 8 个；
+  3. 官方 `SidebarRoot` 的几何（logo 行 60/36px、新会话按钮 38/36px、面板行 36px、折叠内边距 18/10/6）是否变化 → 同步 `SHELL_CSS`；
+  4. `sidebar.panellist` 的 owner props（`size` / `active`）与 `sidebar.workspaces` 的 owner props（`wide` / `expandSidebar`）；
+  5. `shell.leading` 的挂载条件（macOS 且侧栏收起）；
+  6. 官方 WorkspaceBrowser 是否仍以 `sidebar.workspaces` 单占位方式注册。
 
-## Data and privacy
+## 数据与隐私
 
-- Client-only plugin: **no network requests** of its own.
-- Favorites, the section's one-line state and each category's fold choice live in the current browser's `localStorage`: `dsh.recent-sessions.favorites.v1` (session ids in display order), `dsh.recent-sessions.inline.open.v1` (section folded to one line or not) and `dsh.recent-sessions.cats.v1` (per-category fold choices).
-- Archived sessions are not listed (their favorite entries are kept and return when unarchived); favorites are per origin, so another browser or host does not share them.
+- 纯前端插件，**不发起任何网络请求**（除 DSH 自身）。
+- 收藏与折叠状态存在当前浏览器 `localStorage`：
+  `dsh.recent-sessions.favorites.v1`（收藏的会话 id，按展示顺序）、`dsh.recent-sessions.inline.open.v1`（整段是否收起到一行）、`dsh.recent-sessions.cats.v1`（每个分类手动折叠/展开的选择）。
+- 已归档会话不出现在快捷列表里（收藏仍保留，取消归档后自动回来）；收藏按站点区分，换浏览器/换域名不共享。
 
-## License
+## 许可
 
-MIT, see [LICENSE](./LICENSE).
+MIT，见 [LICENSE](./LICENSE)。
