@@ -49,10 +49,11 @@ Favorites keep their display order and are stored in the browser (see Data).
 **From the plugin market (recommended)**: Plugins → Discover → **Add index source** and paste
 
 ```
-https://fastly.jsdelivr.net/gh/tianxiaz/dsh-recent-sessions@main/market/index.json
+https://tianxiaz.github.io/dsh-recent-sessions/market/index.json
 ```
 
-> `raw.githubusercontent.com` is unreachable on some networks, so the index is served through jsDelivr; once GitHub Pages is enabled, `https://tianxiaz.github.io/dsh-recent-sessions/market/index.json` also works.
+> GitHub Pages caches for about 10 minutes, so a release shows up quickly. If that host is unreachable on your network, use the jsDelivr mirror (branch cache ~12 hours):
+> `https://fastly.jsdelivr.net/gh/tianxiaz/dsh-recent-sessions@main/market/index.json`
 
 **Command line**:
 

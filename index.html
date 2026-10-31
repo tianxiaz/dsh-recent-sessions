@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>最近会话 · dsh-recent-sessions</title>
+    <meta name="description" content="像官方「工作区」一样融入 DeepSeek Harness 左侧栏的「最近会话」：收藏、运行中、等待你的回应、完成未读、最近活跃一屏直达。" />
+    <style>
+      :root { color-scheme: light dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+        font: 16px/1.65 ui-sans-serif, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: #0b0d10;
+        color: #e8eaed;
+      }
+      main { width: 100%; max-width: 720px; }
+      .badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 4px 10px; border-radius: 999px;
+        background: #1b2027; color: #9aa4af; font-size: 13px;
+      }
+      h1 { margin: 18px 0 8px; font-size: 30px; line-height: 1.25; letter-spacing: 0.01em; }
+      p.lead { margin: 0 0 28px; color: #b6bec8; font-size: 16px; }
+      ul { margin: 0 0 28px; padding: 0; list-style: none; display: grid; gap: 10px; }
+      li { display: flex; gap: 10px; color: #cbd2da; }
+      li .k { flex: none; width: 84px; color: #7f8a96; }
+      pre {
+        margin: 0 0 12px; padding: 14px 16px; border-radius: 10px;
+        background: #14181d; border: 1px solid #232a32;
+        overflow-x: auto; font-size: 13px; color: #d7dee6;
+      }
+      a { color: #7ab7ff; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      footer { margin-top: 28px; color: #7f8a96; font-size: 13px; }
+      .dots { display: inline-flex; gap: 6px; vertical-align: middle; }
+      .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+      .dot.warn { background: #e0a72c; }
+      .dot.run { background: #4b8bf5; }
+      .dot.done { background: #2fbf71; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="badge">
+        <span class="dots"><i class="dot warn"></i><i class="dot run"></i><i class="dot done"></i></span>
+        DeepSeek Harness 插件
+      </span>
+      <h1>最近会话</h1>
+      <p class="lead">
+        像官方「工作区」一样长在左侧栏里的「最近会话」—— 收藏、运行中、等待你的回应、完成未读、最近活跃，一屏直达。
+      </p>
+
+      <ul>
+        <li><span class="k">融入侧栏</span><span>与官方「工作区」同一套网格（36 / 34 / 32 / 28px），不另开页面、不改官方会话区</span></li>
+        <li><span class="k">五个维度</span><span>收藏 · 运行中 · 等待你的回应 · 完成未读 · 最近活跃</span></li>
+        <li><span class="k">状态一眼</span><span>黄点待授权/待回答、蓝点运行中、绿点完成未读</span></li>
+        <li><span class="k">收藏顺手</span><span>会话行点 ☆，或把会话行拖进「收藏」分组</span></li>
+      </ul>
+
+      <p class="lead" style="margin-bottom: 8px">在 DSH 里安装：</p>
+      <pre>Plugins → Discover → Add index source
+https://tianxiaz.github.io/dsh-recent-sessions/market/index.json</pre>
+      <pre>dsh plugin --profile &lt;profile&gt; add "git+https://github.com/tianxiaz/dsh-recent-sessions.git"</pre>
+
+      <footer>
+        源码 <a href="https://github.com/tianxiaz/dsh-recent-sessions">github.com/tianxiaz/dsh-recent-sessions</a>
+        · 市场索引 <a href="./market/index.json">market/index.json</a>
+        · MIT
+      </footer>
+    </main>
+  </body>
+</html>

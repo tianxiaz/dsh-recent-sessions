@@ -49,10 +49,11 @@
 **插件市场（推荐）**：Plugins → Discover → **Add index source**，粘贴下面的索引地址，然后在卡片上点安装：
 
 ```
-https://fastly.jsdelivr.net/gh/tianxiaz/dsh-recent-sessions@main/market/index.json
+https://tianxiaz.github.io/dsh-recent-sessions/market/index.json
 ```
 
-> 国内网络常访问不到 `raw.githubusercontent.com`，所以索引用 jsDelivr CDN；启用 GitHub Pages 后也可以换成 `https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`。
+> GitHub Pages 缓存约 10 分钟，发版后很快生效。若该地址在你所在网络不通，可换用 jsDelivr 镜像（分支缓存约 12 小时）：
+> `https://fastly.jsdelivr.net/gh/tianxiaz/dsh-recent-sessions@main/market/index.json`
 
 **命令行**：
 
