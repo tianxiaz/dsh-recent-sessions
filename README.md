@@ -3,6 +3,14 @@
 > A **Recent sessions** section that lives in the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) left sidebar exactly like the official Workspaces — favorites, running, waiting-for-you, unread completions and recently active sessions at a glance;
 > **collapse it to one line** when you need the room, **search it in place** from the magnifier, and **favorite any session with the ☆ on its row**.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/preview-light.png">
+  <img alt="Recent Sessions: a left-sidebar section on the official Workspaces grid" src="docs/preview-light.png" width="880">
+</picture>
+
+<sub>Illustration with demo data, not real sessions</sub>
+
 It shares the official **Workspaces** grid and interactions (36px section header / 34px project row / 32px session row / 28px overflow row), so it reads as part of the sidebar: no extra page, no floating panel, and not one change to the official session browser.
 
 **Nice touches**:
@@ -16,15 +24,7 @@ It shares the official **Workspaces** grid and interactions (36px section header
 
 It takes over the left column shell, so the group sits **above the workspace groups** instead of living on its own page, and the official session browser (search, session `…` menu, drag reorder, archived filter, workspace management) keeps working unchanged inside it.
 
-## What it looks like
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/preview-light.png">
-  <img alt="Recent Sessions: a left-sidebar section on the official Workspaces grid" src="docs/preview-light.png" width="880">
-</picture>
-
-<sub>Illustration with demo data, not real sessions</sub>
+## Layout details
 
 - The **section header** matches the official section header: 36px tall, 14px/20 `label-tertiary`, 4px left padding, with the title always fully visible; the title is clickable, and three 28×28 icon actions sit on the right (search sessions, collapse/expand, open in the panel).
   - **Collapse to one line**: clicking the title (or Collapse) folds the whole block into a single 36px row, giving the workspace list its full height back; the choice is remembered in the browser.

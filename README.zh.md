@@ -3,6 +3,14 @@
 > 像官方「工作区」一样长在左侧栏里的「最近会话」—— 收藏、运行中、等待你的回应、完成未读、最近活跃，一屏直达；
 > 不用时**一键收起到一行**，标题右侧 🔍 还能**就地搜索**，**每个会话行都有 ☆ 一点即收藏**。
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/preview-light.png">
+  <img alt="最近会话：与官方「工作区」同一套网格的左侧栏分区" src="docs/preview-light.png" width="880">
+</picture>
+
+<sub>示意图：演示数据，非真实会话</sub>
+
 给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**左侧栏**加一个「最近会话」分区。它和官方「工作区」共用同一套网格与交互（36px 分区标题 / 34px 分组行 / 32px 会话行 / 28px 溢出行），看起来就是官方侧边栏的一部分：不另开页面、不是悬浮面板，也不改变官方会话浏览区的任何行为。
 
 **顺手的地方**：
@@ -16,15 +24,7 @@
 
 它以插件形式接管左侧栏外壳，因此这个分组**就在工作区分组上方**，而不是另开一个页面；官方会话浏览区（搜索、会话 `…` 菜单、拖拽排序、归档筛选、工作区增删改）原样保留、原样工作。
 
-## 它长什么样
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/preview-light.png">
-  <img alt="最近会话：与官方「工作区」同一套网格的左侧栏分区" src="docs/preview-light.png" width="880">
-</picture>
-
-<sub>示意图：演示数据，非真实会话</sub>
+## 视觉与交互细节
 
 - **分区标题**与「工作区」同规格：高 36px、14px/20、`label-tertiary`、左侧 4px 内边距，标题完整显示不截断；标题可点击，右侧三个 28×28 图标动作：`搜索会话`、`收起/展开`、`在面板中打开`。
   - **一键收起到一行**：点标题（或「收起」）整段折叠成一行 36px，工作区列表立刻拿回全部高度；状态记在浏览器里，下次打开保持。
