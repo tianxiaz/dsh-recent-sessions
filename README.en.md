@@ -5,19 +5,11 @@
 > A **Recent sessions** section that lives in the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) left sidebar exactly like the official Workspaces — favorites, running, waiting-for-you, unread completions and recently active sessions at a glance;
 > **collapse it to one line** when you need the room, **search it in place** from the magnifier, and **favorite any session with the ☆ on its row**.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/preview-light.png">
-  <img alt="Recent Sessions: a left-sidebar section on the official Workspaces grid" src="docs/preview-light.png" width="880">
-</picture>
+<img alt="Recent Sessions: a left-sidebar section on the official Workspaces grid" src="docs/preview-light.png" width="880">
 
 <sub>Illustration with demo data, not real sessions</sub>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-collapsed-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/preview-collapsed-light.png">
-  <img alt="Folded: a single 36px row, Workspaces gets its height back" src="docs/preview-collapsed-light.png" width="620">
-</picture>
+<img alt="Folded: a single 36px row, Workspaces gets its height back" src="docs/preview-collapsed-light.png" width="620">
 
 <sub>Folded: the whole block is one 36px row; click the title to expand and the choice is remembered — Workspaces gets its height back right away</sub>
 

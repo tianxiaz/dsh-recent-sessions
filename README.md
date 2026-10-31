@@ -5,19 +5,11 @@
 > 像官方「工作区」一样长在左侧栏里的「最近会话」—— 收藏、运行中、等待你的回应、完成未读、最近活跃，一屏直达；
 > 不用时**一键收起到一行**，标题右侧 🔍 还能**就地搜索**，**每个会话行都有 ☆ 一点即收藏**。
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/preview-light.png">
-  <img alt="最近会话：与官方「工作区」同一套网格的左侧栏分区" src="docs/preview-light.png" width="880">
-</picture>
+<img alt="最近会话：与官方「工作区」同一套网格的左侧栏分区" src="docs/preview-light.png" width="880">
 
 <sub>示意图：演示数据，非真实会话</sub>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-collapsed-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/preview-collapsed-light.png">
-  <img alt="收起态：整段只剩一行，工作区拿回全部高度" src="docs/preview-collapsed-light.png" width="620">
-</picture>
+<img alt="收起态：整段只剩一行，工作区拿回全部高度" src="docs/preview-collapsed-light.png" width="620">
 
 <sub>收起态：整段只剩一行（36px），点标题随时展开，选择会被记住；工作区立即拿回全部高度</sub>
 
