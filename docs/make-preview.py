@@ -145,9 +145,9 @@ def glyph_loop(cv, x, y, color):
     cv.circle(x, y, 5, outline=color, width=1.2)
     cv.line([(x, y - 3.4), (x, y), (x + 2.4, y + 0.6)], color, 1.1)
 
-def draw(theme):
+def draw(theme, collapsed=False):
     c = THEMES[theme]
-    cv = Canvas(960, 900, c, transparent=True)
+    cv = Canvas(960, 1100, c, transparent=True)
     x0, y0, W = 26, 26, 330
     inner = 14
     x = x0 + inner
@@ -170,11 +170,9 @@ def draw(theme):
 
     # panel rows
     for label, gl in (('插件', glyph_sparkle), ('自动化任务', glyph_loop)):
-        cv.rrect(x, y, w, 32, 8)
         gl(cv, x + 14, y + 16, c['ter'])
         cv.text(x + 32, y + 7, label, 13, c['text'])
         y += 36
-    cv.rrect(x, y, w, 32, 8)
     glyph_grid(cv, x + 14, y + 16, c['ter'])
     cv.text(x + 32, y + 7, '更多', 13, c['sec'])
     y += 44
@@ -205,25 +203,29 @@ def draw(theme):
         y += 4
         return top
 
-    fav_y = category(glyph_star, '收藏', 2, [
-        (c['idle'], '客户方案评审 · 终稿', '2 小时前', True),
-        (c['idle'], '多作者陪读方案调研', '昨天', True),
-    ])
-    pending_y = category(glyph_warn, '等待你的回应', 1, [
-        (c['warn'], '登录超时排查', '刚刚', False),
-    ], icon_color=c['warn'])
-    running_y = category(glyph_play, '运行中', 1, [
-        (c['accent'], '重构导出模块', '5 分钟前', False),
-    ], icon_color=c['accent'])
-    unread_y = category(glyph_check, '完成未读', 1, [
-        (c['ok'], '周报生成脚本', '1 小时前', False),
-    ], icon_color=c['ok'])
-    recent_y = category(glyph_clock, '最近活跃', 5, [
-        (c['idle'], '产品需求评审', '3 小时前', False),
-        (c['idle'], '数据看板口径对齐', '昨天', False),
-    ])
-    cv.text(x + 30, y + 6, '展开其余 3 个会话', 12, c['ter'])
-    y += 30
+    fav_y = pending_y = header_y
+    if not collapsed:
+        fav_y = category(glyph_star, '收藏', 2, [
+            (c['idle'], '客户方案评审 · 终稿', '2 小时前', True),
+            (c['idle'], '多作者陪读方案调研', '昨天', True),
+        ])
+        pending_y = category(glyph_warn, '等待你的回应', 1, [
+            (c['warn'], '登录超时排查', '刚刚', False),
+        ], icon_color=c['warn'])
+        category(glyph_play, '运行中', 1, [
+            (c['accent'], '重构导出模块', '5 分钟前', False),
+        ], icon_color=c['accent'])
+        category(glyph_check, '完成未读', 1, [
+            (c['ok'], '周报生成脚本', '1 小时前', False),
+        ], icon_color=c['ok'])
+        category(glyph_clock, '最近活跃', 5, [
+            (c['idle'], '产品需求评审', '3 小时前', False),
+            (c['idle'], '数据看板口径对齐', '昨天', False),
+        ])
+        cv.text(x + 30, y + 6, '展开其余 3 个会话', 12, c['ter'])
+        y += 30
+    else:
+        pass  # folded: the 36px header is the whole section
 
     # divider + official section
     cv.line([(x, y + 4), (x + w, y + 4)], c['divider'], 1)
@@ -235,26 +237,30 @@ def draw(theme):
     glyph_plus(cv, x + w - 12, y + 18, c['ter'])
     y += 38
 
-    cv.rrect(x, y, w, 34, 8)
-    glyph_folder(cv, x + 10, y + 17, c['ter'])
-    cv.text(x + 26, y + 7, '产品设计', 14, c['sec'])
-    y += 34
-    for name, when in (('交互稿走查', '3 天前'), ('埋点方案补充', '4 天前')):
-        cv.dot(x + 14, y + 16, 3.4, c['dim'])
-        cv.text(x + 30, y + 6, name, 13, c['dim'])
-        cv.text(x + w - 6, y + 10, when, 10, c['dim'], anchor='ra')
-        y += 32
+    groups = [
+        ('产品设计', [('交互稿走查', '3 天前'), ('埋点方案补充', '4 天前')]),
+        ('数据平台', [('指标口径梳理', '5 天前'), ('看板权限调整', '6 天前')]),
+    ]
+    for group, rows in groups:
+        glyph_folder(cv, x + 10, y + 17, c['ter'])
+        cv.text(x + 26, y + 7, group, 14, c['sec'])
+        y += 34
+        for name, when in rows:
+            cv.dot(x + 14, y + 16, 3.4, c['dim'])
+            cv.text(x + 30, y + 6, name, 13, c['dim'])
+            cv.text(x + w - 6, y + 10, when, 10, c['dim'], anchor='ra')
+            y += 32
 
     sidebar_h = (y + 14) - y0
+    H = max(460 if collapsed else 900, sidebar_h + 78)
 
-    # compose: background + panel, then the content layer, then callouts
-    base = Canvas(960, 900, c)
+    base = Canvas(960, H, c)
     base.rrect(x0, y0, W, sidebar_h, 16, fill=c['panel'], outline=c['border'])
-    base.img = Image.alpha_composite(base.img.convert('RGBA'), cv.img)
+    layer = cv.img.crop((0, 0, base.img.width, base.img.height))
+    base.img = Image.alpha_composite(base.img.convert('RGBA'), layer)
     base.d = ImageDraw.Draw(base.img)
     cv = base
 
-    # callouts
     cx = x0 + W + 46
     def callout(num, target_y, lines):
         box_h = 22 + 19 * len(lines)
@@ -265,16 +271,22 @@ def draw(theme):
             cv.text(cx + 38, target_y - box_h / 2 + 10 + i * 19, line, 12, c['sec'])
         cv.line([(cx - 2, target_y), (x0 + W + 6, target_y)], c['leader'], 1, dash=(4, 4))
 
-    callout(1, header_y + 18, ['与「工作区」同一套网格与节奏', '整段可一键收起到一行，选择会被记住'])
-    callout(2, fav_y + 51, ['每个会话行都有 ☆：含官方列表，一点即收藏'])
-    callout(3, pending_y + 51, ['黄 = 等待授权 / 回答，蓝 = 运行中，绿 = 完成未读'])
-    callout(4, workspaces_y + 18, ['官方会话区原样保留：搜索 / 菜单 / 拖拽排序'])
+    if collapsed:
+        callout(1, header_y + 18, ['收起后只剩一行（36px），点标题随时展开', '这次选择会被记住，刷新页面也保持'])
+        callout(2, workspaces_y + 18, ['工作区列表立刻拿回全部高度'])
+        cv.text(x0, y0 + sidebar_h + 16, '示意图 · 收起态 · 演示数据', 11, c['ter'])
+        out = f'docs/preview-collapsed-{theme}.png'
+    else:
+        callout(1, header_y + 18, ['与「工作区」同一套网格与节奏', '整段可一键收起到一行，选择会被记住'])
+        callout(2, fav_y + 51, ['每个会话行都有 ☆：含官方列表，一点即收藏'])
+        callout(3, pending_y + 51, ['黄 = 等待授权 / 回答，蓝 = 运行中，绿 = 完成未读'])
+        callout(4, workspaces_y + 18, ['官方会话区原样保留：搜索 / 菜单 / 拖拽排序'])
+        cv.text(x0, y0 + sidebar_h + 16, '示意图 · 演示数据，非真实会话', 11, c['ter'])
+        out = f'docs/preview-{theme}.png'
 
-    # footer
-    cv.text(x0, y0 + sidebar_h + 16, '示意图 · 演示数据，非真实会话', 11, c['ter'])
-    out = f'docs/preview-{theme}.png'
     cv.img.resize((cv.w, cv.h), Image.LANCZOS).convert('RGB').save(out)
     print('wrote', out, (cv.w, cv.h))
 
 for t in ('dark', 'light'):
     draw(t)
+    draw(t, collapsed=True)

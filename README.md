@@ -11,6 +11,14 @@
 
 <sub>Illustration with demo data, not real sessions</sub>
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-collapsed-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/preview-collapsed-light.png">
+  <img alt="Folded: a single 36px row, Workspaces gets its height back" src="docs/preview-collapsed-light.png" width="620">
+</picture>
+
+<sub>Folded: the whole block is one 36px row; click the title to expand and the choice is remembered — Workspaces gets its height back right away</sub>
+
 It shares the official **Workspaces** grid and interactions (36px section header / 34px project row / 32px session row / 28px overflow row), so it reads as part of the sidebar: no extra page, no floating panel, and not one change to the official session browser.
 
 **Nice touches**:
