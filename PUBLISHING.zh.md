@@ -158,7 +158,32 @@ dsh plugin --profile web add dsh-recent-sessions
 
 ---
 
-## 5. 发下一个版本（0.1.1 起）
+## 5. 本地迭代 vs 市场安装（同一个 profile 只能二选一）
+
+- **本地迭代（当前就是这种）**：profile 里是 `link:`，直接指向仓库目录。改 `client.js` → **硬刷新页面**就生效；改 Host 半（`index.js` / `cordis.patch.yml`）则需要重启 dsh。
+
+  ```bash
+  dsh plugin --profile web add "link:/Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions"
+  grep recent-sessions ~/.dsh/profiles/web/package.json     # 应为 link: 开头
+  ```
+
+- **市场/git 安装**：会装一份固定 commit 的副本（`git+https://...`），**覆盖**上面的 link。只有想"以用户身份验收市场版本"时才需要；验收完切回：
+
+  ```bash
+  dsh plugin --profile web add "link:/Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions"
+  ```
+
+- 想两边同时存在：用另一个 profile 验收市场版本，别动开发用的 profile。
+
+  ```bash
+  dsh plugin --profile market-test add "git+https://github.com/tianxiaz/dsh-recent-sessions.git"
+  ```
+
+- 只验证"市场卡片/索引是否正确"其实**不用安装**：Discover 里能看到卡片标题、图标、版本号，就说明索引没问题。
+
+- 本地迭代不影响已发布版本：索引把版本固定到某个 commit，本地改成什么样都不会自动上线；发布永远走下一节的流程。
+
+## 6. 发下一个版本（0.1.1 起）
 
 ```bash
 # 1) 改代码后：升版本 + 记 changelog
@@ -184,7 +209,7 @@ git add market && git commit -m "market: 0.1.1" && git push
 
 ---
 
-## 6. 常见问题
+## 7. 常见问题
 
 | 现象 | 原因 / 处理 |
 |---|---|
@@ -195,7 +220,7 @@ git add market && git commit -m "market: 0.1.1" && git push
 | git 安装被 pnpm 拦 | 本包无 `prepare` 构建脚本，一般不会；若提示 `allowBuilds`，按提示把 pnpm 打印的 key 加进 profile 的 `pnpm-workspace.yaml` 后重试 |
 | 市场里标题/图标不对 | 检查 `locale/zh.json`、`locale/en.json` 与 `market/index.json` 的 title/description/icon 是否一致，重新推送索引后刷新 |
 
-## 7. 卸载与回滚
+## 8. 卸载与回滚
 
 ```bash
 dsh plugin --profile web remove dsh-recent-sessions   # 同时从 bundles 移除
