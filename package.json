@@ -1,7 +1,7 @@
 {
   "name": "dsh-recent-sessions",
   "version": "0.1.0",
-  "description": "A Workspaces-style Recent sessions section in the DSH left sidebar: favorites, waiting-for-you, unread completions and running sessions in one place.",
+  "description": "A Workspaces-native \"Recent sessions\" section for the DSH left sidebar: favorites, running, waiting-for-you, unread completions and recently active sessions at a glance, with status dots and drag-to-favorite.",
   "license": "MIT",
   "type": "module",
   "keywords": [

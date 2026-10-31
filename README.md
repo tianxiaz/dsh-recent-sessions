@@ -1,8 +1,10 @@
 # Recent Sessions · dsh-recent-sessions
 
-> A Workspaces-style **Recent sessions** section in the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) left sidebar — favorites, waiting-for-you, unread completions and running sessions at a glance.
+> A **Recent sessions** section that lives in the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) left sidebar exactly like the official Workspaces — favorites, running, waiting-for-you, unread completions and recently active sessions at a glance.
 
-It shares the official **Workspaces** grid and interactions: the sessions that need you and the ones you keep coming back to, in one place.
+It shares the official **Workspaces** grid and interactions (36px section header / 34px project row / 32px session row / 28px overflow row), so it reads as part of the sidebar: no extra page, no floating panel, and not one change to the official session browser.
+
+**The problem it solves**: with a few tasks in flight, "what is running, what finished and I haven't read, what is waiting for my approval or answer, and which ones do I keep coming back to" takes a lot of scrolling. This section pins **favorites / running / waiting for you / unread completions / recently active** to the top, with yellow-blue-green status dots, so the next click is obvious — and favoriting is either a ☆ click or dragging the session row onto Favorites.
 
 It takes over the left column shell, so the group sits **above the workspace groups** instead of living on its own page, and the official session browser (search, session `…` menu, drag reorder, archived filter, workspace management) keeps working unchanged inside it.
 
