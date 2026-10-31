@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Recent Sessions",
+    "description": "Adds a Recent sessions section to the left sidebar on the Workspaces grid: favorites, waiting-for-you, unread completions and running sessions, with drag-or-star favorites."
+  }
+}

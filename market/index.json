@@ -1,0 +1,95 @@
+{
+  "format": 1,
+  "title": {
+    "en": "Recent Sessions",
+    "zh": "最近会话"
+  },
+  "description": {
+    "en": "Quick access to the sessions you are working on.",
+    "zh": "集中快捷访问正在处理、等待你回应的会话。"
+  },
+  "metadata": {
+    "categories": {
+      "sidebar": {
+        "title": {
+          "en": "Sidebar",
+          "zh": "侧栏"
+        }
+      }
+    },
+    "labels": {
+      "sidebar": {
+        "title": {
+          "en": "Sidebar",
+          "zh": "侧栏"
+        }
+      },
+      "favorites": {
+        "title": {
+          "en": "Favorites",
+          "zh": "收藏"
+        }
+      },
+      "quick-access": {
+        "title": {
+          "en": "Quick access",
+          "zh": "快捷访问"
+        }
+      }
+    },
+    "sortKeys": {}
+  },
+  "plugins": [
+    {
+      "name": "dsh-recent-sessions",
+      "title": {
+        "en": "Recent Sessions",
+        "zh": "最近会话"
+      },
+      "description": {
+        "en": "A native Recent sessions section in the left sidebar: favorites, waiting-for-you, unread completions and running sessions at a glance.",
+        "zh": "像「工作区」一样的左侧栏「最近会话」分区：收藏、等待你回应、完成未读、运行中，一屏直达。"
+      },
+      "icon": "icon.svg",
+      "metadata": {
+        "category": "sidebar",
+        "keywords": [
+          "dsh-plugin",
+          "dsh-bundle",
+          "dsh",
+          "deepseek-harness",
+          "sidebar",
+          "recent-sessions",
+          "favorites",
+          "quick-access",
+          "unread",
+          "approvals"
+        ],
+        "labels": [
+          "sidebar",
+          "favorites",
+          "quick-access"
+        ],
+        "sortKeys": {}
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1793456510,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/OWNER/REPO",
+            "commit": "0123456789abcdef0123456789abcdef01234567"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.5"
+          }
+        }
+      ],
+      "homepage": "https://github.com/OWNER/REPO",
+      "repository": {
+        "url": "https://github.com/OWNER/REPO"
+      }
+    }
+  ]
+}

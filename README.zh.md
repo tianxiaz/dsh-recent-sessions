@@ -1,0 +1,111 @@
+# 最近会话 · dsh-recent-sessions
+
+> 像「工作区」一样的左侧栏「最近会话」分区 —— 收藏、等待你回应、完成未读、运行中，一屏直达。
+
+给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**左侧栏**加一个「最近会话」分区：它和官方「工作区」共用同一套网格与交互，把需要你处理、你常回访的会话集中到一处。
+
+它以插件形式接管左侧栏外壳，因此这个分组**就在工作区分组上方**，而不是另开一个页面；官方会话浏览区（搜索、会话 `…` 菜单、拖拽排序、归档筛选、工作区增删改）原样保留、原样工作。
+
+## 它长什么样
+
+```
+┌──────────────────────────────────────┐
+│  最近会话                     [⌃⌄] [⤢] │  ← 36px 分区标题，右侧 28px 图标动作
+│    ★ 收藏                         5   │  ← 34px 分组行：图标 x=20、标题 x=40
+│       ● 客户方案评审       2 小时前 ☆  │  ← 32px 会话行：状态点 x=32、标题 x=52
+│       展开其余 2 个会话                │  ← 28px 溢出行（官方同款）
+│    ⚠ 等待你的回应                 1   │
+│       ● 修复登录超时           刚刚    │
+│    ▶ 运行中                       1   │  （默认折叠）
+│    ✓ 完成未读                     1   │
+│    🕒 最近活跃                    5   │  （默认折叠）
+├──────────────────────────────────────┤  ← 1px 分隔线
+│  工作区                      [视图] [＋]│  ← 官方分区，原样不动
+│    📁 工作区 A                        │
+│       ● …                             │
+└──────────────────────────────────────┘
+```
+
+- **分区标题**与「工作区」同规格：高 36px、14px/20、`label-tertiary`、左侧 4px 内边距；右侧两个 28×28 图标动作：`全部折叠/展开`、`在面板中打开`。
+- **分类**与工作区分组行同规格：高 34px、16×20 图标槽、标题 14px/20；**悬停时图标换成实心三角**，点击折叠/展开；右侧显示 10px 数量。
+- **会话行**与官方会话行同规格：高 32px、状态点占 16×20 槽、标题 14px/20、右侧 10px 相对时间；**悬停时隐藏时间、浮出 ☆**；当前打开的会话常驻选中底色。
+- **溢出行**沿用官方 `展开其余 N 个会话 / 收起`（28px、12px、`label-tertiary`）。
+- 行间距 2px、分组间距 4px，与官方列表同一套节奏；分类之间与工作区之间用 1px 分隔线区隔。
+
+## 收藏
+
+三种方式：
+
+1. 会话行悬停时点 `☆`（官方会话行上的新增按钮）；
+2. 把会话行**拖进「最近会话」分组**（从下面官方列表直接拖上来即可）；
+3. 在面板页里拖到「收藏」区，或拖到某条收藏上调整顺序。
+
+收藏顺序即展示顺序，保存在本机浏览器（见「数据」）。
+
+## 安装
+
+**插件市场（推荐）**：Plugins → Discover → **Add index source**，粘贴下面的索引地址，然后在卡片上点安装：
+
+```
+https://raw.githubusercontent.com/tianxiaz/dsh-recent-sessions/main/market/index.json
+```
+
+（启用 GitHub Pages 后也可以用它自己的地址：`https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`）
+
+**命令行**：
+
+```bash
+dsh plugin --profile <你的 profile> add "git+https://github.com/tianxiaz/dsh-recent-sessions.git"
+```
+
+**本地目录**（开发/自用）：
+
+```
+plugin_manager install_bundle  <绝对路径>/dsh-recent-sessions
+```
+
+安装后**硬刷新页面**即可。
+
+## ⚠️ 侧栏接管说明（重要）
+
+DSH 左侧栏的两个关键位都是**单占位槽**，插件无法"在官方分组旁边插入一节"：
+
+| 槽 | 官方占用者 | 性质 |
+|---|---|---|
+| `sidebar` | `@deepseek-ai/dsh-client-ui-sidebar` 的 SidebarRoot | 整个左列外壳（品牌行、新会话、面板列表、页脚） |
+| `sidebar.workspaces` | `@deepseek-ai/dsh-client-ui-workspace` 的 WorkspaceBrowser | 会话浏览区 |
+
+所以本插件的做法是：**接管外壳、复用会话区**。
+
+- bundle patch 里 `- id: ui-sidebar` + `disabled: true`，禁用官方外壳；
+- 本插件注册 `sidebar` 占位，声明与官方**同名**的 8 个子槽（`brand.mark` / `brand.name` / `toggle.badge` / `panellist` / `panellist.actions` / `workspaces` / `settings` / `footer.action`），并把 `sidebar.workspaces` **原样渲染**官方 WorkspaceBrowser；
+- 同时提供 `shell.leading`（macOS 侧栏完全收起时的"打开侧栏 / 新会话"两个窗口按钮），否则收起后无处点开。
+
+这意味着：
+
+- 品牌行、新会话按钮、面板图标列表、页脚由本插件渲染（几何与配色对齐官方，但**不是逐像素一致**）；
+- DSH 官方侧栏以后若改动，本插件需要同步更新（见下）；
+- 不想要了，禁用/卸载本 bundle 即可恢复官方侧栏（会同时失去面板页与 `☆` 按钮）。
+
+## 兼容性与维护
+
+- 目标版本：DSH `^0.2.1-rc.5`（`engines.dsh`）。
+- 已知失败模式：若某版 DSH 里 `ui-sidebar` 这个行 **id 改名或消失**，patch 会 warn + skip，本插件注册 `sidebar` 时与官方外壳冲突 → 本插件整体不生效（官方 UI 保持不变）。修复：更新 `cordis.patch.yml` 里的行 id、必要时重新对齐外壳。
+- 升级 DSH 后的核对清单（都在 `client.js` 的 `sidebar shell` 区）：
+  1. `sidebar` 槽的 owner props 是否仍是 `{ collapsed, width }`；
+  2. 需要声明/渲染的子槽集合是否仍是那 8 个；
+  3. 官方 `SidebarRoot` 的几何（logo 行 60/36px、新会话按钮 38/36px、面板行 36px、折叠内边距 18/10/6）是否变化 → 同步 `SHELL_CSS`；
+  4. `sidebar.panellist` 的 owner props（`size` / `active`）与 `sidebar.workspaces` 的 owner props（`wide` / `expandSidebar`）；
+  5. `shell.leading` 的挂载条件（macOS 且侧栏收起）；
+  6. 官方 WorkspaceBrowser 是否仍以 `sidebar.workspaces` 单占位方式注册。
+
+## 数据与隐私
+
+- 纯前端插件，**不发起任何网络请求**（除 DSH 自身）。
+- 收藏与折叠状态存在当前浏览器 `localStorage`：
+  `dsh.recent-sessions.favorites.v1`（收藏的会话 id，按展示顺序）、`dsh.recent-sessions.inline.open.v1`（分组展开状态）。
+- 已归档会话不出现在快捷列表里（收藏仍保留，取消归档后自动回来）；收藏按站点区分，换浏览器/换域名不共享。
+
+## 许可
+
+MIT，见 [LICENSE](./LICENSE)。

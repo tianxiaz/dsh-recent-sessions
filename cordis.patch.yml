@@ -1,0 +1,18 @@
+# Bundle patch for dsh-recent-sessions.
+#
+# `sidebar` and `shell.leading` are single-occupant slots, and the left column's
+# session region (`sidebar.workspaces`) is one slot too — a plugin cannot insert
+# a section beside the shipped workspace groups. This plugin therefore owns the
+# left column shell: it disables the shipped shell package and registers its own
+# `sidebar` occupant, which declares the same holes (brand, panel list, settings,
+# footer actions, and `sidebar.workspaces`) and renders the official
+# workspace/session browser unchanged inside the region area. The "最近会话"
+# group is the only visual difference at the top of that region.
+#
+# The Host row has no behavior of its own; the browser half ships through
+# package.json `dsh.client`.
+- id: ui-sidebar
+  disabled: true
+- insert:
+    - id: recent-sessions
+      name: 'dsh-recent-sessions'

@@ -1,0 +1,59 @@
+{
+  "name": "dsh-recent-sessions",
+  "version": "0.1.0",
+  "description": "A Workspaces-style Recent sessions section in the DSH left sidebar: favorites, waiting-for-you, unread completions and running sessions in one place.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "dsh-plugin",
+    "dsh-bundle",
+    "dsh",
+    "deepseek-harness",
+    "sidebar",
+    "recent-sessions",
+    "favorites",
+    "quick-access",
+    "unread",
+    "approvals"
+  ],
+  "engines": {
+    "dsh": "^0.2.1-rc.5"
+  },
+  "scripts": {
+    "market": "node scripts/make-market-index.mjs"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "CHANGELOG.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-workspace",
+        "@deepseek-ai/dsh-client-ui-session"
+      ]
+    }
+  },
+  "homepage": "https://github.com/tianxiaz/dsh-recent-sessions#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tianxiaz/dsh-recent-sessions.git"
+  }
+}
