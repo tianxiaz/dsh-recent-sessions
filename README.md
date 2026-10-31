@@ -19,6 +19,8 @@
 
 <sub>Folded: the whole block is one 36px row; click the title to expand and the choice is remembered — Workspaces gets its height back right away</sub>
 
+🌐 **Landing page** (illustrations + install entry): <https://tianxiaz.github.io/dsh-recent-sessions/>
+
 It shares the official **Workspaces** grid and interactions (36px section header / 34px project row / 32px session row / 28px overflow row), so it reads as part of the sidebar: no extra page, no floating panel, and not one change to the official session browser.
 
 **Nice touches**:

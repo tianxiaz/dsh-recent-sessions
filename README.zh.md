@@ -19,6 +19,8 @@
 
 <sub>收起态：整段只剩一行（36px），点标题随时展开，选择会被记住；工作区立即拿回全部高度</sub>
 
+🌐 **落地页 / 在线说明**：<https://tianxiaz.github.io/dsh-recent-sessions/>
+
 给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**左侧栏**加一个「最近会话」分区。它和官方「工作区」共用同一套网格与交互（36px 分区标题 / 34px 分组行 / 32px 会话行 / 28px 溢出行），看起来就是官方侧边栏的一部分：不另开页面、不是悬浮面板，也不改变官方会话浏览区的任何行为。
 
 **顺手的地方**：
