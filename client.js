@@ -35,7 +35,6 @@ window.__ModuleLoader__.load({
     // #region locales
     /** Simplified Chinese dictionary (the key-set source of truth). */
     const zh = {
-      'panel.label': '最近会话',
       'page.title': '最近会话',
       'page.subtitle':
         '运行中、等待你回应、完成未读和收藏的会话集中在这里。把会话行拖到「收藏」，或点会话旁的 ☆ 即可固定。',
@@ -71,13 +70,12 @@ window.__ModuleLoader__.load({
       'inline.collapse': '收起',
       'inline.drop': '松开即可收藏',
       'inline.favEmpty': '拖到此处或点 ☆ 收藏',
-      'inline.collapseAll': '全部折叠',
-      'inline.expandAll': '全部展开',
+      'inline.collapseAll': '收起',
+      'inline.expandAll': '展开',
       'inline.openPanel': '在面板中打开',
     };
     /** English dictionary, checked complete against the zh key set. */
     const en = {
-      'panel.label': 'Recent sessions',
       'page.title': 'Recent sessions',
       'page.subtitle':
         'Running sessions, ones waiting for you, unread completions and favorites in one place. Drag a session row onto Favorites, or click the ☆ beside it.',
@@ -113,8 +111,8 @@ window.__ModuleLoader__.load({
       'inline.collapse': 'Collapse',
       'inline.drop': 'Release to favorite',
       'inline.favEmpty': 'Drag here, or click ☆ to favorite',
-      'inline.collapseAll': 'Collapse all',
-      'inline.expandAll': 'Expand all',
+      'inline.collapseAll': 'Collapse',
+      'inline.expandAll': 'Expand',
       'inline.openPanel': 'Open in panel',
     };
     // #endregion
@@ -712,6 +710,8 @@ window.__ModuleLoader__.load({
      * and keeps the informational ones folded so the sidebar list stays short.
      */
     const INLINE_START_COLLAPSED = { favorites: false, pending: false, unread: false, running: true, recent: true };
+    /** Persisted "collapsed to one line" state of the whole section. */
+    const INLINE_OPEN_KEY = 'dsh.recent-sessions.inline.open.v1';
     /** Collapse transition length, matching the shipped sidebar shell. */
     const SHELL_COLLAPSE_MS = 300;
 
@@ -1155,7 +1155,12 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 @keyframes drs-rail-in{0%{opacity:0;transform:translate(49px)}}
 .drs-inline{flex:none;display:flex;flex-direction:column;padding:0 12px 4px 0;margin-bottom:4px;border-bottom:1px solid var(--dsw-alias-border-l1)}
 .drs-sectionHeader{box-sizing:border-box;flex:none;display:flex;align-items:center;gap:4px;height:36px;margin:2px -4px 4px 0;padding-left:4px;color:var(--dsw-alias-label-tertiary);overflow:hidden}
+.drs-inline--drop .drs-sectionHeader{background:var(--dsw-alias-bg-layer-1);border-radius:8px;box-shadow:inset 0 0 0 1px var(--dsw-alias-brand-primary)}
+.drs-sectionToggle{flex:0 1 auto;min-width:0;display:flex;align-items:center;gap:6px;height:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:6px}
+.drs-sectionToggle:hover .drs-sectionLabel{color:var(--dsw-alias-label-secondary)}
+.drs-sectionToggle:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
 .drs-sectionLabel{flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px}
+.drs-sectionCount{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}
 .drs-sectionSpacer{flex:1;min-width:4px}
 .drs-headerActions{flex:none;display:flex;align-items:center;gap:4px}
 .drs-headerBtn{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-secondary);cursor:pointer}
@@ -1202,6 +1207,24 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-leadingBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}
 `;
 
+    /** Persisted open state of the inline section. */
+    function readInlineOpen() {
+      try {
+        return window.localStorage.getItem(INLINE_OPEN_KEY) !== '0';
+      } catch (error) {
+        return true;
+      }
+    }
+
+    /** Remember the inline section's disclosure state. */
+    function writeInlineOpen(open) {
+      try {
+        window.localStorage.setItem(INLINE_OPEN_KEY, open ? '1' : '0');
+      } catch (error) {
+        /* storage may be unavailable; the in-memory state still works */
+      }
+    }
+
     /**
      * The sidebar's inline "最近会话" section.
      *
@@ -1223,6 +1246,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [collapsed, setCollapsed] = useState(() => ({ ...INLINE_START_COLLAPSED }));
       const [expanded, setExpanded] = useState({});
       const [dropActive, setDropActive] = useState(false);
+      const [open, setOpen] = useState(readInlineOpen);
 
       const workspaceItems = workspaces ? workspaces.items : undefined;
       const archivedIds = workspaces ? workspaces.archivedSessionIds : undefined;
@@ -1285,12 +1309,14 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         },
       ];
       const rendered = categories.filter((category) => category.rows.length > 0 || category.key === 'favorites');
-      const anyExpanded = rendered.some((category) => collapsed[category.key] !== true);
+      const attention = groups.pending.length + groups.unread.length;
 
-      const toggleAll = () => {
-        const next = {};
-        for (const category of categories) next[category.key] = anyExpanded;
-        setCollapsed(next);
+      const toggleOpen = () => {
+        setOpen((value) => {
+          const next = !value;
+          writeInlineOpen(next);
+          return next;
+        });
       };
       const toggleCategory = (key) => {
         setCollapsed((state) => ({ ...state, [key]: state[key] !== true }));
@@ -1396,7 +1422,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       return h(
         'section',
         {
-          className: 'drs-inline',
+          className: 'drs-inline' + (dropActive ? ' drs-inline--drop' : ''),
           'aria-label': t('inline.title'),
           onDragOver: (event) => {
             if (!isSessionDrag(event)) return;
@@ -1419,7 +1445,18 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         h(
           'div',
           { className: 'drs-sectionHeader' },
-          h('span', { className: 'drs-sectionLabel' }, t('inline.title')),
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'drs-sectionToggle',
+              'aria-expanded': open ? 'true' : 'false',
+              title: t(open ? 'inline.collapseAll' : 'inline.expandAll'),
+              onClick: toggleOpen,
+            },
+            h('span', { className: 'drs-sectionLabel' }, t('inline.title')),
+            attention > 0 ? h('span', { className: 'drs-sectionCount' }, String(attention)) : null,
+          ),
           h('span', { className: 'drs-sectionSpacer' }),
           h(
             'div',
@@ -1429,11 +1466,11 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               {
                 type: 'button',
                 className: 'drs-headerBtn',
-                'aria-label': t(anyExpanded ? 'inline.collapseAll' : 'inline.expandAll'),
-                title: t(anyExpanded ? 'inline.collapseAll' : 'inline.expandAll'),
-                onClick: toggleAll,
+                'aria-label': t(open ? 'inline.collapseAll' : 'inline.expandAll'),
+                title: t(open ? 'inline.collapseAll' : 'inline.expandAll'),
+                onClick: toggleOpen,
               },
-              h(CollapseAllIcon, { size: 16, collapsed: !anyExpanded }),
+              h(CollapseAllIcon, { size: 16, collapsed: !open }),
             ),
             h(
               'button',
@@ -1448,7 +1485,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             ),
           ),
         ),
-        h('div', { className: 'drs-groups' }, rendered.map(renderCategory)),
+        open ? h('div', { className: 'drs-groups' }, rendered.map(renderCategory)) : null,
       );
     }
 
@@ -1816,19 +1853,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const selectPanel = (id) => {
         ctx.layout.selectPanel(id);
       };
-
-      ctx.slots.inject('sidebar.panellist', () =>
-        ctx.slots.register(
-          {
-            name: 'sidebar.panellist',
-            id: PANEL_ID,
-            order: 20,
-            label: () => t('panel.label'),
-            locale: NS,
-          },
-          PanelIcon,
-        ),
-      );
 
       ctx.slots.inject('main', () =>
         ctx.slots.register(

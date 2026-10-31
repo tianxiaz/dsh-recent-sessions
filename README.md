@@ -28,7 +28,9 @@ It takes over the left column shell, so the group sits **above the workspace gro
 └──────────────────────────────────────┘
 ```
 
-- The **section header** matches 「工作区」: 36px tall, 14px/20 `label-tertiary`, 4px left padding, two 28×28 icon actions on the right (collapse/expand all, open in the panel).
+- The **section header** matches the official section header: 36px tall, 14px/20 `label-tertiary`, 4px left padding; the title is clickable, and two 28×28 icon actions sit on the right (collapse/expand, open in the panel).
+  - **Collapse to one line**: clicking the title (or Collapse) folds the whole block into a single 36px row, giving the workspace list its full height back; the choice is remembered in the browser.
+  - The panel page no longer takes a row in the sidebar's panel list (it duplicated the section); open it from the ⤢ action instead.
 - Each **category** is a workspace-style project row: 34px tall, 16×20 glyph slot, 14px/20 title, a filled triangle that takes the glyph's place on hover, click to fold, plus a 10px count.
 - Each **session row** matches the shipped row: 32px tall, status dot in the 16×20 slot, 14px/20 title, 10px relative time; on hover the time yields to the ☆ star; the session open in the main column keeps the selected background.
 - The **overflow row** is the shipped `Show N more sessions / Collapse` (28px, 12px, `label-tertiary`).
@@ -40,7 +42,7 @@ Three ways:
 
 1. click the `☆` on a session row (a new hover button in the shipped row strip);
 2. **drag** a session row onto the Recent sessions group (from the official list below);
-3. on the panel page, drop onto the Favorites section, or onto an existing favorite to reorder.
+3. open the panel page from the ⤢ action on the section header, then drop onto Favorites, or onto an existing favorite to reorder.
 
 Favorites keep their display order and are stored in the browser (see Data).
 
