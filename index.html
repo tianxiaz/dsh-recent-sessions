@@ -7,7 +7,7 @@
     <meta name="description" content="像官方「工作区」一样融入 DeepSeek Harness 左侧栏的「最近会话」：收藏、运行中、等待你的回应、完成未读、最近活跃一屏直达。" />
     <style>
       :root {
-        color-scheme: light dark;
+        color-scheme: light;
         --bg: #f6f7f9;
         --panel: #ffffff;
         --border: #e3e6ea;
@@ -17,19 +17,6 @@
         --code-bg: #f1f3f6;
         --accent: #1f5fd0;
         --badge-bg: #eef1f5;
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #0b0d10;
-          --panel: #14181d;
-          --border: #242b33;
-          --text: #e8eaed;
-          --muted: #b6bec8;
-          --faint: #7f8a96;
-          --code-bg: #14181d;
-          --accent: #7ab7ff;
-          --badge-bg: #1b2027;
-        }
       }
       * { box-sizing: border-box; }
       body {
@@ -85,18 +72,12 @@
       </p>
 
       <figure>
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="./docs/preview-dark.png" />
-          <img src="./docs/preview-light.png" alt="最近会话分区示意（演示数据）" />
-        </picture>
+        <img src="./docs/preview-light.png" alt="最近会话分区示意（演示数据）" />
         <figcaption>示意图 · 演示数据，非真实会话</figcaption>
       </figure>
 
       <figure>
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="./docs/preview-collapsed-dark.png" />
-          <img src="./docs/preview-collapsed-light.png" alt="收起态：只剩一行，工作区拿回全部高度" />
-        </picture>
+        <img src="./docs/preview-collapsed-light.png" alt="收起态：只剩一行，工作区拿回全部高度" />
         <figcaption>收起态 · 整段只剩一行，工作区立即拿回全部高度</figcaption>
       </figure>
 
