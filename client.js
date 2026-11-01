@@ -367,7 +367,7 @@ window.__ModuleLoader__.load({
      * array, so React sees new rows only when one of the inputs changed.
      */
     function buildGroups(input) {
-      const { ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now } = input;
+      const { ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed } = input;
       const archived = new Set(archivedIds || []);
       const whereBySession = new Map();
       const whereByPath = new Map();
@@ -389,13 +389,15 @@ window.__ModuleLoader__.load({
         const running = !pending && status.running === true;
         const unread = !pending && !running && status.completionUnread === true;
         const state = pending ? 'pending' : running ? 'running' : unread ? 'unread' : 'idle';
+        const lastActive = typeof summary.updatedAt === 'number' ? summary.updatedAt : 0;
+        const opened = (viewed && viewed[sessionId]) || 0;
         rows.push({
           id: sessionId,
           title: summary.displayTitle || sessionId,
           where:
             whereBySession.get(sessionId) ||
             (summary.cwd ? whereByPath.get(summary.cwd) || basename(summary.cwd) : ''),
-          updatedAt: typeof summary.updatedAt === 'number' ? summary.updatedAt : 0,
+          updatedAt: Math.max(lastActive, opened),
           origin: summary.origin,
           pendingKind,
           state,
@@ -505,6 +507,8 @@ window.__ModuleLoader__.load({
       const favorites = useFavorites((list) => list);
       const now = useMinuteTick();
       const [dropTarget, setDropTarget] = useState(null);
+      const [viewed, setViewed] = useState(readViewed);
+      const [pendingOpen, setPendingOpen] = useState(undefined);
 
       const knownIds = useMemo(() => {
         const known = new Set();
@@ -515,11 +519,11 @@ window.__ModuleLoader__.load({
 
       const favoriteSet = useMemo(() => new Set(favorites || []), [favorites]);
       const groups = useMemo(
-        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now }),
-        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now],
+        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed }),
+        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed],
       );
       /** The session the main column currently shows, read from the mainView retain count. */
-      const currentId = useMemo(() => {
+      const hostCurrentId = useMemo(() => {
         if (!byId) return undefined;
         for (const sessionId of Object.keys(byId)) {
           const summary = byId[sessionId];
@@ -527,6 +531,31 @@ window.__ModuleLoader__.load({
         }
         return undefined;
       }, [byId]);
+
+      /** A row opened from this section wins until the host selection catches up. */
+      const openRow = (sessionId) => {
+        setPendingOpen(sessionId);
+        setViewed((previous) => {
+          const next = { ...previous, [sessionId]: Date.now() };
+          writeViewed(next);
+          return next;
+        });
+        openSession(sessionId);
+      };
+      useEffect(() => {
+        if (pendingOpen === undefined) return;
+        if (hostCurrentId === pendingOpen) setPendingOpen(undefined);
+      }, [hostCurrentId, pendingOpen]);
+      useEffect(() => {
+        if (hostCurrentId === undefined) return;
+        setViewed((previous) => {
+          if (previous[hostCurrentId] !== undefined) return previous;
+          const next = { ...previous, [hostCurrentId]: Date.now() };
+          writeViewed(next);
+          return next;
+        });
+      }, [hostCurrentId]);
+      const currentId = pendingOpen !== undefined ? pendingOpen : hostCurrentId;
 
       const dragPropsOf = (row) => ({
         draggable: true,
@@ -596,7 +625,7 @@ window.__ModuleLoader__.load({
               className: 'drs-main',
               title: row.title,
               'aria-label': t('action.open') + ': ' + row.title,
-              onClick: () => openSession(row.id),
+              onClick: () => openRow(row.id),
             },
             h('span', { className: 'drs-name' }, row.title),
             row.where ? h('span', { className: 'drs-where' }, row.where) : null,
@@ -1372,6 +1401,52 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       }
     }
 
+    /** Persisted scroll offset of the inline list, so a reload lands where it left off. */
+    function readInlineScroll() {
+      try {
+        const value = Number(window.localStorage.getItem('dsh.recent-sessions.scroll.v1'));
+        return Number.isFinite(value) && value > 0 ? value : 0;
+      } catch (error) {
+        return 0;
+      }
+    }
+
+    /** Remember the inline list's scroll offset. */
+    function writeInlineScroll(value) {
+      try {
+        window.localStorage.setItem('dsh.recent-sessions.scroll.v1', String(Math.max(0, Math.round(value))));
+      } catch (error) {
+        /* storage may be unavailable; the in-memory state still works */
+      }
+    }
+
+    /** Session ids this browser opened, with the timestamp of the last open. */
+    function readViewed() {
+      try {
+        const raw = window.localStorage.getItem('dsh.recent-sessions.viewed.v1');
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return {};
+        const map = {};
+        for (const key of Object.keys(parsed)) {
+          const value = parsed[key];
+          if (typeof value === 'number' && Number.isFinite(value)) map[key] = value;
+        }
+        return map;
+      } catch (error) {
+        return {};
+      }
+    }
+
+    /** Remember that a session was just opened. */
+    function writeViewed(map) {
+      try {
+        window.localStorage.setItem('dsh.recent-sessions.viewed.v1', JSON.stringify(map));
+      } catch (error) {
+        /* storage may be unavailable; the in-memory state still works */
+      }
+    }
+
     /** Remember the inline section's disclosure state. */
     function writeInlineOpen(open) {
       try {
@@ -1409,18 +1484,23 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [searching, setSearching] = useState(false);
       const [query, setQuery] = useState('');
       const [edges, setEdges] = useState({ top: false, bottom: false });
+      const [viewed, setViewed] = useState(readViewed);
+      const [pendingOpen, setPendingOpen] = useState(undefined);
+      const [dragFold, setDragFold] = useState(false);
       const searchRef = React.useRef(null);
       const listRef = React.useRef(null);
-      const savedScroll = React.useRef(0);
+      const savedScroll = React.useRef(readInlineScroll());
+      const scrollWriteAt = React.useRef(0);
+      const sectionRef = React.useRef(null);
 
       const workspaceItems = workspaces ? workspaces.items : undefined;
       const archivedIds = workspaces ? workspaces.archivedSessionIds : undefined;
       const groups = useMemo(
-        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now }),
-        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now],
+        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed }),
+        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed],
       );
       /** The session the main column currently shows, read from the mainView retain count. */
-      const currentId = useMemo(() => {
+      const hostCurrentId = useMemo(() => {
         if (!byId) return undefined;
         for (const sessionId of Object.keys(byId)) {
           const summary = byId[sessionId];
@@ -1428,6 +1508,31 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         }
         return undefined;
       }, [byId]);
+
+      /** A row opened from this section wins until the host selection catches up. */
+      const openRow = (sessionId) => {
+        setPendingOpen(sessionId);
+        setViewed((previous) => {
+          const next = { ...previous, [sessionId]: Date.now() };
+          writeViewed(next);
+          return next;
+        });
+        openSession(sessionId);
+      };
+      useEffect(() => {
+        if (pendingOpen === undefined) return;
+        if (hostCurrentId === pendingOpen) setPendingOpen(undefined);
+      }, [hostCurrentId, pendingOpen]);
+      useEffect(() => {
+        if (hostCurrentId === undefined) return;
+        setViewed((previous) => {
+          if (previous[hostCurrentId] !== undefined) return previous;
+          const next = { ...previous, [hostCurrentId]: Date.now() };
+          writeViewed(next);
+          return next;
+        });
+      }, [hostCurrentId]);
+      const currentId = pendingOpen !== undefined ? pendingOpen : hostCurrentId;
       const knownIds = useMemo(() => {
         const known = new Set();
         for (const sessionId of ids || []) known.add(sessionId);
@@ -1489,7 +1594,10 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         if (key === 'recent') return hasActive || groups.recent.length === 0;
         return countOf[key] === 0;
       };
-      const isCollapsed = (key) => (overrides[key] === undefined ? defaultCollapsed(key) : overrides[key] === true);
+      const isCollapsed = (key) => {
+        if (countOf[key] === 0) return true;
+        return overrides[key] === undefined ? defaultCollapsed(key) : overrides[key] === true;
+      };
 
       const needle = query.trim().toLowerCase();
       const matches = useMemo(() => {
@@ -1533,16 +1641,39 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         return undefined;
       }, [searching]);
 
+      /**
+       * Dragging a session out of the Workspaces list needs the height this
+       * section occupies; fold to the one-line header for the duration of the
+       * drag (the header itself stays a drop target) and restore afterwards.
+       */
+      useEffect(() => {
+        const onDragStart = (event) => {
+          const node = sectionRef.current;
+          if (node && node.contains(event.target)) return;
+          setDragFold(true);
+        };
+        const onDragEnd = () => setDragFold(false);
+        document.addEventListener('dragstart', onDragStart, true);
+        window.addEventListener('dragend', onDragEnd);
+        window.addEventListener('drop', onDragEnd);
+        return () => {
+          document.removeEventListener('dragstart', onDragStart, true);
+          window.removeEventListener('dragend', onDragEnd);
+          window.removeEventListener('drop', onDragEnd);
+        };
+      }, []);
+
       useEffect(() => {
         readEdges();
       }, [groups, searching, query, open, overrides, expanded]);
 
+      const effectiveOpen = open && !dragFold;
       useEffect(() => {
         const node = listRef.current;
         if (!node) return;
-        if (open) node.scrollTop = savedScroll.current;
+        node.scrollTop = savedScroll.current;
         readEdges();
-      }, [open]);
+      }, [effectiveOpen]);
 
       /** A drag can end anywhere (Esc, dropped outside); never leave the ring behind. */
       useEffect(() => {
@@ -1560,6 +1691,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       }, [dropZone, dropBefore]);
 
       const toggleOpen = () => {
+        const node = listRef.current;
+        if (node) writeInlineScroll(node.scrollTop);
         setOpen((value) => {
           const next = !value;
           writeInlineOpen(next);
@@ -1608,7 +1741,13 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       };
       const onListScroll = () => {
         const node = listRef.current;
-        if (node) savedScroll.current = node.scrollTop;
+        if (!node) return;
+        savedScroll.current = node.scrollTop;
+        const stamp = Date.now();
+        if (stamp - scrollWriteAt.current > 250) {
+          scrollWriteAt.current = stamp;
+          writeInlineScroll(node.scrollTop);
+        }
         readEdges();
       };
 
@@ -1679,8 +1818,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               setDropBefore(null);
               setDropZone(null);
             },
-            onClick: () => openSession(row.id),
-            onKeyDown: (event) => onKey(event, () => openSession(row.id)),
+            onClick: () => openRow(row.id),
+            onKeyDown: (event) => onKey(event, () => openRow(row.id)),
             ...dropProps,
           },
           h(
@@ -1815,6 +1954,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       return h(
         'section',
         {
+          ref: sectionRef,
           className: 'drs-inline',
           'aria-label': t('inline.title'),
           onKeyDown: onNavKey,
@@ -1859,7 +1999,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                     const first = matches[0];
                     if (!first) return;
                     event.preventDefault();
-                    openSession(first.id);
+                    openRow(first.id);
                   },
                 }),
                 h(
@@ -1886,7 +2026,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                     title: collapsedLabel,
                     onClick: toggleOpen,
                   },
-                  h('span', { className: 'drs-sectionLabel' }, t('inline.title')),
+                  h('span', { className: 'drs-sectionLabel' }, t(dragFold && dropZone === 'section' ? 'inline.drop' : 'inline.title')),
                   attention > 0 ? h('span', { className: 'drs-sectionCount' }, String(attention)) : null,
                 ),
                 h('span', { key: 'spacer', className: 'drs-sectionSpacer' }),
@@ -1929,7 +2069,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 ),
               ],
         ),
-        open
+        effectiveOpen
           ? h(
               'div',
               { ref: listRef, className: listClass, onScroll: onListScroll, role: 'tree', 'aria-label': t('inline.title') },
@@ -2014,7 +2154,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           h('span', { className: 'drs-panelGlyph', 'aria-hidden': 'true' }, h(AppsAddIcon, { size: wide ? 16 : 18 })),
           wide ? h('span', { className: 'drs-panelTitle' }, label) : null,
         ),
-        open
+        effectiveOpen
           ? h(
               'div',
               { className: 'drs-moreMenu', role: 'menu' },
