@@ -97,6 +97,10 @@ Consequences:
 - if DSH changes its sidebar, this plugin needs a matching update (see below);
 - to revert, disable or remove the bundle: the official sidebar returns (the panel page and the `☆` button go away with it).
 
+**Crash isolation**: taking over the shell means "plugin down = no occupant for the column", so the whole sidebar is wrapped in an error boundary. A throw in any child degrades to: a one-line notice, a **Reload** button, and the **official session list rendered as-is** — sessions and workspaces stay usable.
+
+**Space budget**: the Workspaces list always wins — it keeps at least **55%** of the visible region (and never fewer than "six session rows + its header"), while Recent sessions is capped at **45%** and scrolls internally (floor 96px, ceiling 420px on very short windows). While you drag a session out of Workspaces, Recent sessions folds to a single line and its header becomes the drop target.
+
 ## Compatibility and maintenance
 
 - Target: DSH `^0.2.1-rc.5` (`engines.dsh`).
