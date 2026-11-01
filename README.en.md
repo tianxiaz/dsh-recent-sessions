@@ -21,8 +21,10 @@ It shares the official **Workspaces** grid and interactions (36px section header
 
 - **every session row carries a ☆** — the official list included — so favoriting is one hover-click anywhere, no drag and no need to open the session;
 - the whole block folds into a single line (with the choice remembered);
-- the magnifier turns the header into an input that searches this section by title or workspace;
-- a category you folded or expanded by hand keeps that state across hard reloads.
+- the magnifier turns the header into an input that searches this section; matches are highlighted, `Enter` opens the first hit, and `↑` / `↓` walk the section from the keyboard;
+- favorites can be reordered by dragging, and hovering a favorite reveals ↑ "move to top";
+- a category you folded or expanded by hand keeps that state across hard reloads — so does the section's scroll offset;
+- pending rows say "Approval" / "Question" instead of only a relative time.
 
 **The problem it solves**: with a few tasks in flight, "what is running, what finished and I haven't read, what is waiting for my approval or answer, and which ones do I keep coming back to" takes a lot of scrolling. This section pins **favorites / running / waiting for you / unread completions / recently active** to the top, with yellow-blue-green status dots, so the next click is obvious — and favoriting is either a ☆ click or dragging the session row onto Favorites.
 
