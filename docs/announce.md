@@ -81,3 +81,61 @@ Repository: https://github.com/tianxiaz/dsh-recent-sessions
 | X / Twitter | 英文一句话 + `social-preview.png` + 仓库链接 |
 
 > 微信/QQ 分享不读 OG 标签，头图由它们自己抓取；其余平台会正确显示社交卡。
+
+---
+
+## 短版（Discord / 群聊 / 即刻 / X，直接复制）
+
+**中文**
+
+> 给 DSH 写了个小插件「最近会话」：像官方「工作区」一样长在左侧栏里的分区 —— 收藏 / 运行中 / 等待你的回应 / 完成未读 / 最近活跃一屏直达。
+> 亮点：每个会话行都有 ☆ 一点即收藏；整段可收起到一行；标题右侧就地搜索；官方会话区一行没改。
+> 安装：Plugins → Discover → Add index source → `https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`
+> 仓库：https://github.com/tianxiaz/dsh-recent-sessions
+
+**English**
+
+> Built a small DSH plugin: **Recent Sessions** — a section in the left sidebar built on the official Workspaces grid (favorites / running / waiting-for-you / unread / recently active).
+> Highlights: a one-click ☆ on every session row, collapse the whole block to one line, search in place, official browser untouched.
+> Install: Plugins → Discover → Add index source → `https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`
+> Repo: https://github.com/tianxiaz/dsh-recent-sessions
+
+---
+
+## 长版（掘金 / V2EX / 知乎 / 公众号）：建议结构
+
+标题备选：
+
+- 《我给 DSH 左侧栏加了一个「最近会话」，做法是接管官方外壳》
+- 《为什么我不做浮层，而是把「最近会话」做成和「工作区」一样的原生分区》
+- 《DSH 插件实战：如何复刻官方侧栏的 36/34/32/28 网格》
+
+结构（比广告更吸量的写法）：
+
+1. **问题**：会话一多，"哪个在跑 / 哪个跑完了没看 / 哪个在等我授权"要翻半天；
+2. **调研**：看了 5 个同类插件，都是浮层 / 底部列表 / 独立面板 —— 没有一个是"原生分区"；
+3. **难点**：DSH 的 `sidebar` 和 `sidebar.workspaces` 都是单占位槽，插件插不进去；
+4. **做法**：接管外壳、把官方会话区原样嵌回、按官方 CSS 量出 36/34/32/28 的网格；
+5. **结果**：截图（整窗图 + 细节图）+ 五个维度 + 每行 ☆ + 收起到一行 + 就地搜索；
+6. **代价与边界**：接管外壳意味着官方侧栏更新要跟；禁用即回退；
+7. **安装**：索引源地址 / git 命令。
+
+配图：`docs/preview-desktop-light.png`（首图）、`docs/preview-light.png`（细节）、`docs/social-preview.png`（分享卡）。
+
+---
+
+## 渠道清单
+
+| 渠道 | 语言 | 用什么 |
+|---|---|---|
+| [DSH 官方 Discord](https://discord.gg/4MrtZUhpxg) | 英文 | 短版英文 + `social-preview.png`（找 `#plugins` / `#showcase` 类频道） |
+| [awesome-dsh-plugin Discussions](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/discussions) | 英文 | 短版英文（合并后再发，链接更完整） |
+| [V2EX · 分享创造](https://www.v2ex.com/go/create) | 中文 | 短版中文 + 整窗图 |
+| 掘金 | 中文 | 长版（技术向，讲"接管外壳 + 复刻网格"） |
+| 即刻 / 小红书 | 中文 | 短版中文 + 整窗图（小红书建议 3:4 竖版裁图） |
+| 知乎 | 中文 | 长版（自问自答式） |
+| 公众号 | 中文 | 长版改写成故事 + 图 |
+| X / Twitter | 英文 | 短版英文 + `social-preview.png` |
+| 你自己的 DSH 群 | 中文 | 短版中文 |
+
+**时机**：等社区市场 PR 合并后再集中发一轮，链接能直接落到市场条目；同一天发完，别拖成"几个月前的插件"。
