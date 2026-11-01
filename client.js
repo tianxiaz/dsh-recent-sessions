@@ -1227,7 +1227,11 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-headerBtn{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-secondary);cursor:pointer}
 .drs-headerBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-headerBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
-.drs-groups{display:flex;flex-direction:column}
+.drs-groups{display:flex;flex-direction:column;max-height:min(44vh,480px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--dsh-scrollbar-thumb,rgba(128,138,150,.45)) transparent;padding-right:2px}
+.drs-groups::-webkit-scrollbar{width:5px}
+.drs-groups::-webkit-scrollbar-track{background:transparent}
+.drs-groups::-webkit-scrollbar-thumb{background:var(--dsh-scrollbar-thumb,rgba(128,138,150,.45));border-radius:999px}
+.drs-groups::-webkit-scrollbar-thumb:hover{background:var(--dsh-scrollbar-thumb-hover,rgba(128,138,150,.7))}
 .drs-group{position:relative;display:flex;flex-direction:column}
 .drs-group>*+*{margin-top:2px}
 .drs-group+.drs-group{margin-top:4px}
