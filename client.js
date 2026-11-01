@@ -77,6 +77,8 @@ window.__ModuleLoader__.load({
       'inline.search.empty': '没有匹配的会话',
       'inline.search.more': '还有 {n} 条，输入更多关键词缩小范围',
       'inline.noSessions': '还没有会话：先在左侧新建一个',
+      'inline.crashed': '侧栏组件出错，已切回官方会话列表',
+      'inline.reload': '重新加载',
       'inline.pending.approval': '待授权',
       'inline.pending.question': '待回答',
       'inline.pending.other': '待回应',
@@ -128,6 +130,8 @@ window.__ModuleLoader__.load({
       'inline.search.empty': 'No matching sessions',
       'inline.search.more': '{n} more matches — type more to narrow it down',
       'inline.noSessions': 'No sessions yet — start one from the sidebar',
+      'inline.crashed': 'The sidebar component failed — showing the built-in session list',
+      'inline.reload': 'Reload',
       'inline.pending.approval': 'Approval',
       'inline.pending.question': 'Question',
       'inline.pending.other': 'Waiting',
@@ -1363,6 +1367,10 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-leading{display:flex;align-items:center;gap:8px}
 .drs-leadingBtn{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-secondary);cursor:pointer}
 .drs-leadingBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.drs-fallback{display:flex;flex-direction:column;min-height:0;height:100%}
+.drs-fallbackNotice{display:flex;align-items:center;gap:8px;justify-content:space-between;margin:6px 10px 8px;padding:8px 10px;border-radius:8px;background:var(--dsw-alias-bg-layer-1);font:400 12px/16px var(--dsw-font-sans);color:var(--dsw-alias-label-secondary)}
+.drs-fallbackBtn{flex:none;padding:2px 8px;border:1px solid var(--dsw-alias-border-secondary);border-radius:6px;background:none;color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer}
+.drs-fallbackBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}
 `;
 
     /** Persisted open state of the inline section. */
@@ -1454,6 +1462,45 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       } catch (error) {
         /* storage may be unavailable; the in-memory state still works */
       }
+    }
+
+    /**
+     * Last-resort sidebar: this plugin owns the `sidebar` slot, so a crash in
+     * any child would otherwise leave the column with no occupant at all.
+     * Keep the built-in session list reachable instead.
+     */
+    function SidebarFallback(props) {
+      const { t, renderSlot, toggleSidebar, collapsed } = props;
+      return h(
+        'div',
+        { className: 'drs-fallback' },
+        h(
+          'div',
+          { className: 'drs-fallbackNotice' },
+          h('span', null, t('inline.crashed')),
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'drs-fallbackBtn',
+              onClick: () => {
+                window.location.reload();
+              },
+            },
+            t('inline.reload'),
+          ),
+        ),
+        h(
+          Guard,
+          { fallback: null },
+          renderSlot('sidebar.workspaces', {
+            wide: true,
+            expandSidebar: () => {
+              if (collapsed) toggleSidebar();
+            },
+          }),
+        ),
+      );
     }
 
     /**
@@ -2154,7 +2201,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           h('span', { className: 'drs-panelGlyph', 'aria-hidden': 'true' }, h(AppsAddIcon, { size: wide ? 16 : 18 })),
           wide ? h('span', { className: 'drs-panelTitle' }, label) : null,
         ),
-        effectiveOpen
+        open
           ? h(
               'div',
               { className: 'drs-moreMenu', role: 'menu' },
@@ -2532,7 +2579,12 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               },
             }),
           },
-          SidebarShell,
+          (props) =>
+            h(
+              Guard,
+              { fallback: h(SidebarFallback, props) },
+              h(SidebarShell, props),
+            ),
         ),
       );
 
