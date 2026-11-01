@@ -74,27 +74,31 @@
       },
       "versions": [
         {
-          "version": "0.1.1",
-          "publishTimestamp": 1793488361,
+          "version": "0.1.2",
+          "publishTimestamp": 1793501701,
           "source": {
             "type": "git",
             "url": "https://github.com/tianxiaz/dsh-recent-sessions",
-            "commit": "e3652c45ef6abe8e1ec13eb4ec0613562b03a7b6"
+            "commit": "25bad35bb6afc9b11336f86e2b247d4a55ed9826"
           },
           "engines": {
             "dsh": "^0.2.1-rc.5"
           }
         },
         {
-          "version": "0.1.0",
-          "publishTimestamp": 1793486587,
+          "version": "0.1.1",
           "source": {
             "type": "git",
-            "url": "https://github.com/tianxiaz/dsh-recent-sessions",
+            "url": "https://github.com/tianxiaz/dsh-recent-sessions.git",
+            "commit": "e3652c45ef6abe8e1ec13eb4ec0613562b03a7b6"
+          }
+        },
+        {
+          "version": "0.1.0",
+          "source": {
+            "type": "git",
+            "url": "https://github.com/tianxiaz/dsh-recent-sessions.git",
             "commit": "bc792b0620edad385bd61671938f98e48ae51f23"
-          },
-          "engines": {
-            "dsh": "^0.2.1-rc.5"
           }
         }
       ],
