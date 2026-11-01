@@ -75,6 +75,10 @@ window.__ModuleLoader__.load({
       'inline.search.placeholder': '搜索最近会话',
       'inline.search.clear': '关闭搜索',
       'inline.search.empty': '没有匹配的会话',
+      'inline.noSessions': '还没有会话：先在左侧新建一个',
+      'inline.pending.approval': '待授权',
+      'inline.pending.question': '待回答',
+      'inline.pending.other': '待回应',
       'inline.collapseAll': '收起',
       'inline.expandAll': '展开',
       'inline.openPanel': '在面板中打开',
@@ -121,6 +125,10 @@ window.__ModuleLoader__.load({
       'inline.search.placeholder': 'Search recent sessions',
       'inline.search.clear': 'Close search',
       'inline.search.empty': 'No matching sessions',
+      'inline.noSessions': 'No sessions yet — start one from the sidebar',
+      'inline.pending.approval': 'Approval',
+      'inline.pending.question': 'Question',
+      'inline.pending.other': 'Waiting',
       'inline.collapseAll': 'Collapse',
       'inline.expandAll': 'Expand',
       'inline.openPanel': 'Open in panel',
@@ -354,6 +362,7 @@ window.__ModuleLoader__.load({
         if (summary.blank) continue;
         const status = (statuses && statuses.get(sessionId)) || {};
         const pending = status.pendingInteraction !== undefined && status.pendingInteraction !== null;
+        const pendingKind = pending ? status.pendingInteraction.kind : undefined;
         const running = !pending && status.running === true;
         const unread = !pending && !running && status.completionUnread === true;
         const state = pending ? 'pending' : running ? 'running' : unread ? 'unread' : 'idle';
@@ -365,6 +374,7 @@ window.__ModuleLoader__.load({
             (summary.cwd ? whereByPath.get(summary.cwd) || basename(summary.cwd) : ''),
           updatedAt: typeof summary.updatedAt === 'number' ? summary.updatedAt : 0,
           origin: summary.origin,
+          pendingKind,
           state,
         });
       }
@@ -1232,6 +1242,13 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-groups::-webkit-scrollbar-track{background:transparent}
 .drs-groups::-webkit-scrollbar-thumb{background:var(--dsh-scrollbar-thumb,rgba(128,138,150,.45));border-radius:999px}
 .drs-groups::-webkit-scrollbar-thumb:hover{background:var(--dsh-scrollbar-thumb-hover,rgba(128,138,150,.7))}
+.drs-groups.drs-edge-top{mask-image:linear-gradient(180deg,transparent 0,#000 16px)}
+.drs-groups.drs-edge-bottom{mask-image:linear-gradient(0deg,transparent 0,#000 22px)}
+.drs-groups.drs-edge-top.drs-edge-bottom{mask-image:linear-gradient(180deg,transparent 0,#000 16px calc(100% - 22px),transparent 100%)}
+.drs-mark{background:none;color:var(--dsw-alias-brand-primary);font-weight:600;padding:0}
+.drs-row--dropBefore{box-shadow:inset 0 2px 0 var(--dsw-alias-brand-primary)}
+.drs-rowWhere{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:2px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
+.drs-rowNote{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-state-warn-primary);white-space:nowrap}
 .drs-group{position:relative;display:flex;flex-direction:column}
 .drs-group>*+*{margin-top:2px}
 .drs-group+.drs-group{margin-top:4px}
@@ -1256,7 +1273,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-rowTitle{flex:1;min-width:0;margin:0 6px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px}
 .drs-rowTime{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}
 .drs-rowStar{flex:none;display:none;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
-.drs-row:hover .drs-rowTime{display:none}
+.drs-row:hover .drs-rowTime,.drs-row:hover .drs-rowNote{display:none}
 .drs-row:hover .drs-rowStar,.drs-rowStar--on{display:grid}
 .drs-rowStar--on{color:var(--dsw-alias-brand-primary)}
 .drs-overflow{box-sizing:border-box;width:100%;height:28px;padding:0 12px 0 40px;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-tertiary);font-size:12px;text-align:left;cursor:pointer;font-family:inherit}
@@ -1320,19 +1337,15 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
     /**
      * The sidebar's inline "最近会话" section.
      *
-     * Mirrors the shipped browsing region layer for layer: a 36px section header
-     * (title left, 28px icon actions right) like 「工作区」, one 34px project row
-     * per category (16px glyph that swaps for a disclosure triangle on hover),
-     * 32px session rows with a 16px status slot, the shipped 28px overflow row,
-     * and the shipped 2px row / 4px group rhythm.
-     *
-     * Expansion is data-driven until the user overrides it: an empty Favorites
-     * starts folded (with a one-line hint), categories that hold sessions needing
-     * the user start expanded, and Recently active starts expanded only while
-     * nothing needs the user. The header's magnifier searches this section.
+     * Mirrors the shipped browsing region layer for layer (36px section header,
+     * 34px project rows, 32px session rows, 28px overflow row, 2px/4px rhythm) and
+     * adds the behaviour this section needs on its own: a bounded scroll area
+     * with edge fades, arrow-key navigation, in-place search with match
+     * highlighting, drag-to-reorder inside Favorites, and a data-driven default
+     * fold that the user's own choices override.
      */
     function RecentInlineGroup(props) {
-      const { t, selectPanel, openSession, toggleFavorite, addFavorite } = props;
+      const { t, selectPanel, openSession, toggleFavorite, addFavorite, insertFavoriteBefore } = props;
       const { useSessions, useSessionStatus, useWorkspaces, useFavorites } = props;
       const ids = useSessions((state) => state.ids);
       const byId = useSessions((state) => state.byId);
@@ -1344,9 +1357,13 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [overrides, setOverrides] = useState(readCategoryOverrides);
       const [expanded, setExpanded] = useState({});
       const [dropActive, setDropActive] = useState(false);
+      const [dropBefore, setDropBefore] = useState(null);
       const [searching, setSearching] = useState(false);
       const [query, setQuery] = useState('');
+      const [edges, setEdges] = useState({ top: false, bottom: false });
       const searchRef = React.useRef(null);
+      const listRef = React.useRef(null);
+      const savedScroll = React.useRef(0);
 
       const workspaceItems = workspaces ? workspaces.items : undefined;
       const archivedIds = workspaces ? workspaces.archivedSessionIds : undefined;
@@ -1426,8 +1443,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       };
       const isCollapsed = (key) => (overrides[key] === undefined ? defaultCollapsed(key) : overrides[key] === true);
 
+      const needle = query.trim().toLowerCase();
       const matches = useMemo(() => {
-        const needle = query.trim().toLowerCase();
         const all = groups.all || [];
         if (!needle) return all.slice(0, 20);
         const hits = [];
@@ -1438,7 +1455,28 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           if (title.indexOf(needle) >= 0 || where.indexOf(needle) >= 0) hits.push(row);
         }
         return hits;
-      }, [groups.all, query]);
+      }, [groups.all, needle]);
+
+      /** Wrap the matched span of a title so search hits are obvious. */
+      const highlight = (title) => {
+        if (!searching || !needle) return title;
+        const lower = title.toLowerCase();
+        const at = lower.indexOf(needle);
+        if (at < 0) return title;
+        return [
+          title.slice(0, at),
+          h('mark', { key: 'mark', className: 'drs-mark' }, title.slice(at, at + needle.length)),
+          title.slice(at + needle.length),
+        ];
+      };
+
+      const readEdges = () => {
+        const node = listRef.current;
+        if (!node) return;
+        const top = node.scrollTop > 2;
+        const bottom = node.scrollTop + node.clientHeight < node.scrollHeight - 2;
+        setEdges((previous) => (previous.top === top && previous.bottom === bottom ? previous : { top, bottom }));
+      };
 
       useEffect(() => {
         if (!searching) return undefined;
@@ -1446,6 +1484,17 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         if (node) node.focus();
         return undefined;
       }, [searching]);
+
+      useEffect(() => {
+        readEdges();
+      }, [groups, searching, query, open, overrides, expanded]);
+
+      useEffect(() => {
+        const node = listRef.current;
+        if (!node) return;
+        if (open) node.scrollTop = savedScroll.current;
+        readEdges();
+      }, [open]);
 
       const toggleOpen = () => {
         setOpen((value) => {
@@ -1480,30 +1529,99 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         event.preventDefault();
         action();
       };
+      /** Arrow keys walk the visible rows and category headers; inputs keep their own keys. */
+      const onNavKey = (event) => {
+        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+        const target = event.target;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+        const items = Array.from(event.currentTarget.querySelectorAll('[data-drs-item]'));
+        if (items.length === 0) return;
+        const index = items.indexOf(document.activeElement);
+        if (index < 0) return;
+        const next = items[index + (event.key === 'ArrowDown' ? 1 : -1)];
+        if (!next) return;
+        event.preventDefault();
+        next.focus();
+      };
+      const onListScroll = () => {
+        const node = listRef.current;
+        if (node) savedScroll.current = node.scrollTop;
+        readEdges();
+      };
 
       const renderRow = (row) => {
         const favorite = favoriteSet.has(row.id);
         const label = t(favorite ? 'action.unfavorite' : 'action.favorite');
         const selected = row.id === currentId;
+        const pendingNote = row.state === 'pending'
+          ? t(
+              row.pendingKind === 'approval'
+                ? 'inline.pending.approval'
+                : row.pendingKind === 'question'
+                  ? 'inline.pending.question'
+                  : 'inline.pending.other',
+            )
+          : undefined;
+        const dropProps = favorite
+          ? {
+              onDragOver: (event) => {
+                if (!isSessionDrag(event)) return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+                setDropBefore((current) => (current === row.id ? current : row.id));
+              },
+              onDragLeave: (event) => {
+                if (event.currentTarget.contains(event.relatedTarget)) return;
+                setDropBefore((current) => (current === row.id ? null : current));
+              },
+              onDrop: (event) => {
+                const sessionId = readDragId(event, knownIds);
+                setDropBefore(null);
+                if (sessionId === undefined) return;
+                event.preventDefault();
+                event.stopPropagation();
+                insertFavoriteBefore(sessionId, row.id);
+              },
+            }
+          : {};
         return h(
           'div',
           {
             key: row.id,
-            className: 'drs-row' + (selected ? ' drs-row--selected' : ''),
+            'data-drs-item': 'row',
+            className:
+              'drs-row' +
+              (selected ? ' drs-row--selected' : '') +
+              (dropBefore === row.id ? ' drs-row--dropBefore' : ''),
             role: 'treeitem',
-            'aria-selected': selected ? 'true' : 'false',
             tabIndex: 0,
-            title: row.title,
+            title: row.title + (pendingNote ? ' · ' + pendingNote : ''),
+            draggable: true,
+            onDragStart: (event) => {
+              const transfer = event.dataTransfer;
+              if (!transfer) return;
+              try {
+                transfer.effectAllowed = 'move';
+                transfer.setData(DRAG_TYPE, row.id);
+                transfer.setData('text/plain', row.id);
+              } catch (error) {
+                /* text/plain still carries the id when a custom type is refused */
+              }
+              setDropBefore(null);
+            },
             onClick: () => openSession(row.id),
             onKeyDown: (event) => onKey(event, () => openSession(row.id)),
+            ...dropProps,
           },
           h(
             'span',
             { className: 'drs-rowSlot', 'aria-hidden': 'true' },
             h('span', { className: 'drs-dot drs-dot--' + row.state, title: t('dot.' + row.state) }),
           ),
-          h('span', { className: 'drs-rowTitle' }, row.title),
-          h('span', { className: 'drs-rowTime' }, row.time),
+          h('span', { className: 'drs-rowTitle' }, highlight(row.title)),
+          searching && row.where ? h('span', { className: 'drs-rowWhere' }, row.where) : null,
+          pendingNote ? h('span', { className: 'drs-rowNote' }, pendingNote) : h('span', { className: 'drs-rowTime' }, row.time),
           h(
             'button',
             {
@@ -1530,11 +1648,12 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         const dropRing = dropActive && category.key === 'favorites';
         return h(
           'div',
-          { key: category.key, className: 'drs-group' + (dropRing ? ' drs-group--drop' : '') },
+          { key: category.key, className: 'drs-group' + (dropRing ? ' drs-group--drop' : ''), role: 'group' },
           h(
             'div',
             {
               className: 'drs-projectRow',
+              'data-drs-item': 'group',
               role: 'treeitem',
               tabIndex: 0,
               'aria-expanded': folded ? 'false' : 'true',
@@ -1575,12 +1694,18 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       };
 
       const collapsedLabel = t(open ? 'inline.collapseAll' : 'inline.expandAll');
+      const nothingYet = !searching && (groups.all || []).length === 0;
+      const listClass =
+        'drs-groups' +
+        (edges.top ? ' drs-edge-top' : '') +
+        (edges.bottom ? ' drs-edge-bottom' : '');
 
       return h(
         'section',
         {
           className: 'drs-inline' + (dropActive ? ' drs-inline--drop' : ''),
           'aria-label': t('inline.title'),
+          onKeyDown: onNavKey,
           onDragOver: (event) => {
             if (!isSessionDrag(event)) return;
             event.preventDefault();
@@ -1594,6 +1719,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           onDrop: (event) => {
             const sessionId = readDragId(event, knownIds);
             setDropActive(false);
+            setDropBefore(null);
             if (sessionId === undefined) return;
             event.preventDefault();
             addFavorite(sessionId);
@@ -1613,7 +1739,15 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                   value: query,
                   onChange: (event) => setQuery(event.target.value),
                   onKeyDown: (event) => {
-                    if (event.key === 'Escape') closeSearch();
+                    if (event.key === 'Escape') {
+                      closeSearch();
+                      return;
+                    }
+                    if (event.key !== 'Enter') return;
+                    const first = matches[0];
+                    if (!first) return;
+                    event.preventDefault();
+                    openSession(first.id);
                   },
                 }),
                 h(
@@ -1684,15 +1818,17 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               ],
         ),
         open
-          ? searching
-            ? h(
-                'div',
-                { className: 'drs-groups' },
-                matches.length === 0
+          ? h(
+              'div',
+              { ref: listRef, className: listClass, onScroll: onListScroll, role: 'tree', 'aria-label': t('inline.title') },
+              searching
+                ? matches.length === 0
                   ? h('div', { className: 'drs-inlineEmpty' }, t('inline.search.empty'))
-                  : matches.map((row) => renderRow(row)),
-              )
-            : h('div', { className: 'drs-groups' }, rendered.map(renderCategory))
+                  : matches.map((row) => renderRow(row))
+                : nothingYet
+                  ? h('div', { className: 'drs-inlineEmpty' }, t('inline.noSessions'))
+                  : rendered.map(renderCategory),
+            )
           : null,
       );
     }
@@ -1792,6 +1928,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         setPinned,
         toggleFavorite,
         addFavorite,
+        insertFavoriteBefore,
         openSession,
         usePanels,
         useEntryPins,
@@ -1964,6 +2101,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                   openSession,
                   toggleFavorite,
                   addFavorite,
+                  insertFavoriteBefore,
                   useSessions,
                   useSessionStatus,
                   useWorkspaces,
@@ -2118,6 +2256,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               setPinned: pins.setPinned,
               toggleFavorite: favorites.toggle,
               addFavorite: favorites.add,
+              insertFavoriteBefore: favorites.insertBefore,
               openSession,
               hooks: {
                 panels: panels.source,
