@@ -10,7 +10,7 @@
 - [ ] 社区市场 PR 已合并：`https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/11008` 显示 **Merged**
 - [ ] 网页条目可访问：`https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/`（合并后几分钟生成）
 - [ ] DSH 里「设置 → 插件市场」能搜到 `dsh-recent-sessions`
-- [ ] 索引返回 **0.1.1**：`https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`
+- [ ] 索引返回 **0.1.2**：`https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`
 - [ ] 落地页正常：`https://tianxiaz.github.io/dsh-recent-sessions/`
 - [ ] 仓库 About 有描述 / Website / 7 个 topics；Social preview 已上传
 - [ ] fork 里那个 `#1` 已关闭
