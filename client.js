@@ -1308,7 +1308,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-headerBtn{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-secondary);cursor:pointer}
 .drs-headerBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-headerBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
-.drs-groups{display:flex;flex-direction:column;max-height:min(44vh,480px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--dsh-scrollbar-thumb,rgba(128,138,150,.45)) transparent;padding-right:2px}
+.drs-groups{display:flex;flex-direction:column;max-height:min(38vh,420px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--dsh-scrollbar-thumb,rgba(128,138,150,.45)) transparent;padding-right:2px}
 .drs-groups::-webkit-scrollbar{width:5px}
 .drs-groups::-webkit-scrollbar-track{background:transparent}
 .drs-groups::-webkit-scrollbar-thumb{background:var(--dsh-scrollbar-thumb,rgba(128,138,150,.45));border-radius:999px}
@@ -1514,7 +1514,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
      * fold that the user's own choices override.
      */
     function RecentInlineGroup(props) {
-      const { t, selectPanel, openSession, toggleFavorite, addFavorite, insertFavoriteBefore, moveFavoriteToFront } = props;
+      const { t, selectPanel, openSession, toggleFavorite, addFavorite, insertFavoriteBefore, moveFavoriteToFront, maxHeight } = props;
       const { useSessions, useSessionStatus, useWorkspaces, useFavorites } = props;
       const ids = useSessions((state) => state.ids);
       const byId = useSessions((state) => state.byId);
@@ -2119,7 +2119,14 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         effectiveOpen
           ? h(
               'div',
-              { ref: listRef, className: listClass, onScroll: onListScroll, role: 'tree', 'aria-label': t('inline.title') },
+              {
+                ref: listRef,
+                className: listClass,
+                onScroll: onListScroll,
+                role: 'tree',
+                'aria-label': t('inline.title'),
+                style: maxHeight ? { maxHeight: maxHeight + 'px' } : undefined,
+              },
               searching
                 ? matches.length === 0
                   ? h('div', { className: 'drs-inlineEmpty' }, t('inline.search.empty'))
@@ -2251,11 +2258,32 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         renderSlot,
       } = props;
 
+      const regionRef = React.useRef(null);
+      const [sectionMax, setSectionMax] = useState(undefined);
       const panels = usePanels((snapshot) => snapshot);
       const unpinned = useEntryPins((ids) => ids);
       const activePanelId = usePanelInfo((info) => info.activePanelId);
       const hasEntryActions = useEntryActions((registered) => registered);
       const [settled, setSettled] = useState(collapsed);
+      useEffect(() => {
+        const node = regionRef.current;
+        if (!node || typeof ResizeObserver === 'undefined') return undefined;
+        const compute = () => {
+          const height = node.clientHeight;
+          if (!height) return;
+          // The Workspaces list stays the primary surface: it keeps at least 55%
+          // of the region (and never fewer than six session rows plus its header).
+          const browserReserve = Math.max(238, Math.round(height * 0.55));
+          const next = Math.max(96, Math.min(420, height - browserReserve));
+          setSectionMax((previous) => (previous === next ? previous : next));
+        };
+        compute();
+        const observer = new ResizeObserver(compute);
+        observer.observe(node);
+        return () => {
+          observer.disconnect();
+        };
+      }, [collapsed]);
       useEffect(() => {
         if (!collapsed) {
           setSettled(false);
@@ -2398,7 +2426,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           : null,
         h(
           'div',
-          { className: 'drs-regionArea' },
+          { className: 'drs-regionArea', ref: regionRef },
           wide
             ? h(
                 Guard,
@@ -2412,6 +2440,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                   addFavorite,
                   insertFavoriteBefore,
                   moveFavoriteToFront,
+                  maxHeight: sectionMax,
                   useSessions,
                   useSessionStatus,
                   useWorkspaces,
