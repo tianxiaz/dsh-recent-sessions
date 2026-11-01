@@ -99,7 +99,7 @@ Consequences:
 
 **Crash isolation**: taking over the shell means "plugin down = no occupant for the column", so the whole sidebar is wrapped in an error boundary. A throw in any child degrades to: a one-line notice, a **Reload** button, and the **official session list rendered as-is** — sessions and workspaces stay usable.
 
-**Space budget**: the Workspaces list always wins — it keeps at least **55%** of the visible region (and never fewer than "six session rows + its header"), while Recent sessions is capped at **45%** and scrolls internally (floor 96px, ceiling 420px on very short windows). While you drag a session out of Workspaces, Recent sessions folds to a single line and its header becomes the drop target.
+**Space budget**: the Workspaces list always wins — it keeps at least **55%** of the available height (and never less than 160px), while Recent sessions is capped at **45%** / 420px and scrolls internally; on short windows it keeps only its title row and leaves the height to Workspaces. While you drag a session out of Workspaces, Recent sessions folds to a single line and its header becomes the drop target.
 
 ## Compatibility and maintenance
 

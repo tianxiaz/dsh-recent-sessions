@@ -29,6 +29,8 @@ window.__ModuleLoader__.load({
     const FAVORITES_KEY = 'dsh.recent-sessions.favorites.v1';
     /** How many plain "recently active" rows the panel shows. */
     const RECENT_LIMIT = 8;
+    /** Height the inline section header, its margins and the divider take before any row. */
+    const SECTION_CHROME = 46;
     /** Drag payload type this plugin sets on its own rows. */
     const DRAG_TYPE = 'application/x-dsh-recent-session';
 
@@ -1282,6 +1284,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-shell--collapsed .drs-panelRow{width:36px;height:36px;justify-content:center;margin:0;padding:0;color:var(--dsw-alias-label-primary)}
 .drs-moreWrap{position:relative;display:flex;flex-direction:column}
 .drs-moreMenu{position:absolute;z-index:40;top:calc(100% + 4px);left:0;width:288px;max-width:calc(100vw - 24px);padding:6px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-overlay);box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.drs-browserSlot{flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .drs-regionArea{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;margin-left:-4px;margin-right:calc(-1 * var(--drs-sidebar-inline-padding));padding-left:4px}
 .drs-shell--collapsed .drs-regionArea{margin:0;padding-left:0}
 .drs-footArea{flex:none;display:flex;flex-direction:column}
@@ -2125,7 +2128,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 onScroll: onListScroll,
                 role: 'tree',
                 'aria-label': t('inline.title'),
-                style: maxHeight ? { maxHeight: maxHeight + 'px' } : undefined,
+                style: maxHeight === undefined ? undefined : { maxHeight: maxHeight + 'px' },
               },
               searching
                 ? matches.length === 0
@@ -2273,8 +2276,11 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           if (!height) return;
           // The Workspaces list stays the primary surface: it keeps at least 55%
           // of the region (and never fewer than six session rows plus its header).
-          const browserReserve = Math.max(238, Math.round(height * 0.55));
-          const next = Math.max(96, Math.min(420, height - browserReserve));
+          // The header (36px + margins + the divider) is always there; only the
+          // list above it competes with the Workspaces browser.
+          const usable = Math.max(0, height - SECTION_CHROME);
+          const browserFloor = Math.max(160, Math.round(usable * 0.55));
+          const next = Math.max(0, Math.min(420, usable - browserFloor));
           setSectionMax((previous) => (previous === next ? previous : next));
         };
         compute();
@@ -2448,12 +2454,16 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 }),
               )
             : null,
-          renderSlot('sidebar.workspaces', {
-            wide,
-            expandSidebar: () => {
-              if (collapsed) toggleSidebar();
-            },
-          }),
+          h(
+            'div',
+            { key: 'browser', className: 'drs-browserSlot' },
+            renderSlot('sidebar.workspaces', {
+              wide,
+              expandSidebar: () => {
+                if (collapsed) toggleSidebar();
+              },
+            }),
+          ),
         ),
         h(
           'div',
