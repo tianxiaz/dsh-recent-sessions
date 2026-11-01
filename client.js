@@ -196,6 +196,10 @@ window.__ModuleLoader__.load({
         if (ids.indexOf(sessionId) < 0) return;
         commit(ids.filter((value) => value !== sessionId));
       };
+      const moveToFront = (sessionId) => {
+        if (ids.indexOf(sessionId) <= 0) return;
+        commit([sessionId].concat(ids.filter((value) => value !== sessionId)));
+      };
       const insertBefore = (sessionId, beforeId) => {
         if (sessionId === beforeId) return;
         const rest = ids.filter((value) => value !== sessionId);
@@ -220,7 +224,7 @@ window.__ModuleLoader__.load({
           };
         },
       };
-      return { source, add, remove, insertBefore, toggle };
+      return { source, add, remove, moveToFront, insertBefore, toggle };
     }
     // #endregion
 
@@ -312,6 +316,23 @@ window.__ModuleLoader__.load({
     }
 
     /** Sidebar glyph: a clock with a quick-access sparkle. */
+    /** Arrow hitting a top bar — "move to front" for a favorite row. */
+    function MoveTopIcon({ size = 12 }) {
+      return h(
+        'svg',
+        { width: size, height: size, viewBox: '0 0 16 16', 'aria-hidden': 'true', fill: 'none' },
+        h('path', { d: 'M4.4 3.4h7.2', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' }),
+        h('path', { d: 'M8 13.2V6.6', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' }),
+        h('path', {
+          d: 'M4.8 9.4 8 6.2l3.2 3.2',
+          stroke: 'currentColor',
+          strokeWidth: 1.5,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+        }),
+      );
+    }
+
     function PanelIcon({ size }) {
       return h(
         'svg',
@@ -473,7 +494,7 @@ window.__ModuleLoader__.load({
      */
     function RecentSessionsPage(props) {
       const { t, useSessions, useSessionStatus, useWorkspaces, useFavorites } = props;
-      const { toggleFavorite, addFavorite, insertFavoriteBefore, openSession } = props;
+      const { toggleFavorite, addFavorite, insertFavoriteBefore, moveFavoriteToFront, openSession } = props;
 
       const ids = useSessions((state) => state.ids);
       const byId = useSessions((state) => state.byId);
@@ -581,6 +602,22 @@ window.__ModuleLoader__.load({
             row.where ? h('span', { className: 'drs-where' }, row.where) : null,
           ),
           h('span', { className: 'drs-time' }, row.time),
+          favorite
+            ? h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'drs-pinTop',
+                  'aria-label': t('action.moveToTop'),
+                  title: t('action.moveToTop'),
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    moveFavoriteToFront(row.id);
+                  },
+                },
+                h(MoveTopIcon, { size: 13 }),
+              )
+            : null,
           h(
             'button',
             {
@@ -1279,6 +1316,12 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-rowStar{flex:none;display:none;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 .drs-row:hover .drs-rowTime,.drs-row:hover .drs-rowNote{display:none}
 .drs-row:hover .drs-rowStar,.drs-rowStar--on{display:grid}
+.drs-rowTop{flex:none;display:none;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
+.drs-row:hover .drs-rowTop,.drs-row:focus-within .drs-rowTop{display:grid}
+.drs-rowTop:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
+.drs-pinTop{flex:none;display:none;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:5px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:0;transition:opacity .12s ease}
+.drs-row:hover .drs-pinTop,.drs-row:focus-within .drs-pinTop{display:grid;opacity:1}
+.drs-pinTop:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
 .drs-rowStar--on{color:var(--dsw-alias-brand-primary)}
 .drs-overflow{box-sizing:border-box;width:100%;height:28px;padding:0 12px 0 40px;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-tertiary);font-size:12px;text-align:left;cursor:pointer;font-family:inherit}
 .drs-overflow:hover{color:var(--dsw-alias-label-secondary)}
@@ -1349,7 +1392,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
      * fold that the user's own choices override.
      */
     function RecentInlineGroup(props) {
-      const { t, selectPanel, openSession, toggleFavorite, addFavorite, insertFavoriteBefore } = props;
+      const { t, selectPanel, openSession, toggleFavorite, addFavorite, insertFavoriteBefore, moveFavoriteToFront } = props;
       const { useSessions, useSessionStatus, useWorkspaces, useFavorites } = props;
       const ids = useSessions((state) => state.ids);
       const byId = useSessions((state) => state.byId);
@@ -1647,6 +1690,22 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           ),
           h('span', { className: 'drs-rowTitle' }, highlight(row.title)),
           pendingNote ? h('span', { className: 'drs-rowNote' }, pendingNote) : h('span', { className: 'drs-rowTime' }, row.time),
+          favorite
+            ? h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'drs-rowTop',
+                  'aria-label': t('action.moveToTop'),
+                  title: t('action.moveToTop'),
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    moveFavoriteToFront(row.id);
+                  },
+                },
+                h(MoveTopIcon, { size: 12 }),
+              )
+            : null,
           h(
             'button',
             {
@@ -1991,6 +2050,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         toggleFavorite,
         addFavorite,
         insertFavoriteBefore,
+        moveFavoriteToFront,
         openSession,
         usePanels,
         useEntryPins,
@@ -2164,6 +2224,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                   toggleFavorite,
                   addFavorite,
                   insertFavoriteBefore,
+                  moveFavoriteToFront,
                   useSessions,
                   useSessionStatus,
                   useWorkspaces,
@@ -2273,6 +2334,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               toggleFavorite: favorites.toggle,
               addFavorite: favorites.add,
               insertFavoriteBefore: favorites.insertBefore,
+              moveFavoriteToFront: favorites.moveToFront,
               openSession,
             }),
           },
@@ -2319,6 +2381,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               toggleFavorite: favorites.toggle,
               addFavorite: favorites.add,
               insertFavoriteBefore: favorites.insertBefore,
+              moveFavoriteToFront: favorites.moveToFront,
               openSession,
               hooks: {
                 panels: panels.source,
