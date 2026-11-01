@@ -75,6 +75,7 @@ window.__ModuleLoader__.load({
       'inline.search.placeholder': '搜索最近会话',
       'inline.search.clear': '关闭搜索',
       'inline.search.empty': '没有匹配的会话',
+      'inline.search.more': '还有 {n} 条，输入更多关键词缩小范围',
       'inline.noSessions': '还没有会话：先在左侧新建一个',
       'inline.pending.approval': '待授权',
       'inline.pending.question': '待回答',
@@ -125,6 +126,7 @@ window.__ModuleLoader__.load({
       'inline.search.placeholder': 'Search recent sessions',
       'inline.search.clear': 'Close search',
       'inline.search.empty': 'No matching sessions',
+      'inline.search.more': '{n} more matches — type more to narrow it down',
       'inline.noSessions': 'No sessions yet — start one from the sidebar',
       'inline.pending.approval': 'Approval',
       'inline.pending.question': 'Question',
@@ -1222,7 +1224,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 @keyframes drs-rail-in{0%{opacity:0;transform:translate(49px)}}
 .drs-inline{flex:none;display:flex;flex-direction:column;padding:0 12px 4px 0;margin-bottom:4px;border-bottom:1px solid var(--dsw-alias-border-l1)}
 .drs-sectionHeader{box-sizing:border-box;flex:none;display:flex;align-items:center;gap:4px;height:36px;margin:2px -4px 4px 0;padding-left:4px;color:var(--dsw-alias-label-tertiary);overflow:hidden}
-.drs-inline--drop .drs-sectionHeader{background:var(--dsw-alias-bg-layer-1);border-radius:8px;box-shadow:inset 0 0 0 1px var(--dsw-alias-brand-primary)}
 .drs-sectionToggle{flex:0 0 auto;min-width:0;display:flex;align-items:center;gap:6px;height:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:6px}
 .drs-sectionToggle:hover .drs-sectionLabel{color:var(--dsw-alias-label-secondary)}
 .drs-sectionToggle:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
@@ -1252,7 +1253,9 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-group{position:relative;display:flex;flex-direction:column}
 .drs-group>*+*{margin-top:2px}
 .drs-group+.drs-group{margin-top:4px}
-.drs-group--drop{box-shadow:inset 0 0 0 1px var(--dsw-alias-brand-primary);border-radius:8px}
+.drs-group--drop{border-radius:8px;background:var(--dsw-alias-bg-layer-1);box-shadow:inset 0 0 0 1px var(--dsw-alias-brand-primary)}
+.drs-groups--search .drs-row + .drs-row{margin-top:2px}
+.drs-searchMore{padding:8px 6px 4px calc(28px + var(--dsh-workspace-indent-level-1,0px));font:400 11px/16px var(--dsw-font-sans);color:var(--dsw-alias-label-tertiary)}
 .drs-projectRow{box-sizing:border-box;display:flex;align-items:center;gap:6px;height:34px;padding:0 8px;border-radius:8px;color:var(--dsw-alias-label-primary);cursor:pointer;user-select:none}
 .drs-projectRow:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-projectRow:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
@@ -1356,7 +1359,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [open, setOpen] = useState(readInlineOpen);
       const [overrides, setOverrides] = useState(readCategoryOverrides);
       const [expanded, setExpanded] = useState({});
-      const [dropActive, setDropActive] = useState(false);
+      const [dropZone, setDropZone] = useState(null);
+      const SEARCH_LIMIT = 8;
       const [dropBefore, setDropBefore] = useState(null);
       const [searching, setSearching] = useState(false);
       const [query, setQuery] = useState('');
@@ -1496,6 +1500,21 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         readEdges();
       }, [open]);
 
+      /** A drag can end anywhere (Esc, dropped outside); never leave the ring behind. */
+      useEffect(() => {
+        if (dropZone === null && dropBefore === null) return undefined;
+        const clear = () => {
+          setDropZone(null);
+          setDropBefore(null);
+        };
+        window.addEventListener('dragend', clear);
+        window.addEventListener('drop', clear);
+        return () => {
+          window.removeEventListener('dragend', clear);
+          window.removeEventListener('drop', clear);
+        };
+      }, [dropZone, dropBefore]);
+
       const toggleOpen = () => {
         setOpen((value) => {
           const next = !value;
@@ -1578,6 +1597,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               onDrop: (event) => {
                 const sessionId = readDragId(event, knownIds);
                 setDropBefore(null);
+                setDropZone(null);
                 if (sessionId === undefined) return;
                 event.preventDefault();
                 event.stopPropagation();
@@ -1596,7 +1616,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               (dropBefore === row.id ? ' drs-row--dropBefore' : ''),
             role: 'treeitem',
             tabIndex: 0,
-            title: row.title + (pendingNote ? ' · ' + pendingNote : ''),
+            title: row.title + (row.where ? ' · ' + row.where : '') + (pendingNote ? ' · ' + pendingNote : ''),
             draggable: true,
             onDragStart: (event) => {
               const transfer = event.dataTransfer;
@@ -1609,6 +1629,11 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 /* text/plain still carries the id when a custom type is refused */
               }
               setDropBefore(null);
+              setDropZone(null);
+            },
+            onDragEnd: () => {
+              setDropBefore(null);
+              setDropZone(null);
             },
             onClick: () => openSession(row.id),
             onKeyDown: (event) => onKey(event, () => openSession(row.id)),
@@ -1620,7 +1645,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             h('span', { className: 'drs-dot drs-dot--' + row.state, title: t('dot.' + row.state) }),
           ),
           h('span', { className: 'drs-rowTitle' }, highlight(row.title)),
-          searching && row.where ? h('span', { className: 'drs-rowWhere' }, row.where) : null,
           pendingNote ? h('span', { className: 'drs-rowNote' }, pendingNote) : h('span', { className: 'drs-rowTime' }, row.time),
           h(
             'button',
@@ -1645,10 +1669,37 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         const isExpanded = expanded[category.key] === true;
         const visible = isExpanded ? category.rows : category.rows.slice(0, category.limit);
         const hidden = category.rows.length - visible.length;
-        const dropRing = dropActive && category.key === 'favorites';
+        const dropRing = dropZone === 'favorites' && category.key === 'favorites';
         return h(
           'div',
-          { key: category.key, className: 'drs-group' + (dropRing ? ' drs-group--drop' : ''), role: 'group' },
+          {
+            key: category.key,
+            className: 'drs-group' + (dropRing ? ' drs-group--drop' : ''),
+            role: 'group',
+            ...(category.key === 'favorites'
+              ? {
+                  onDragOver: (event) => {
+                    if (!isSessionDrag(event)) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+                    setDropZone('favorites');
+                  },
+                  onDragLeave: (event) => {
+                    if (event.currentTarget.contains(event.relatedTarget)) return;
+                    setDropZone((current) => (current === 'favorites' ? null : current));
+                  },
+                  onDrop: (event) => {
+                    const sessionId = readDragId(event, knownIds);
+                    setDropZone(null);
+                    if (sessionId === undefined) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    addFavorite(sessionId);
+                  },
+                }
+              : {}),
+          },
           h(
             'div',
             {
@@ -1676,7 +1727,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           folded
             ? null
             : category.rows.length === 0
-              ? h('div', { className: 'drs-inlineEmpty' }, t(dropActive ? 'inline.drop' : 'inline.favEmpty'))
+              ? h('div', { className: 'drs-inlineEmpty' }, t(dropZone !== null ? 'inline.drop' : 'inline.favEmpty'))
               : visible.map((row) => renderRow(row)),
           folded || hidden === 0
             ? null
@@ -1697,28 +1748,29 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const nothingYet = !searching && (groups.all || []).length === 0;
       const listClass =
         'drs-groups' +
+        (searching ? ' drs-groups--search' : '') +
         (edges.top ? ' drs-edge-top' : '') +
         (edges.bottom ? ' drs-edge-bottom' : '');
 
       return h(
         'section',
         {
-          className: 'drs-inline' + (dropActive ? ' drs-inline--drop' : ''),
+          className: 'drs-inline',
           'aria-label': t('inline.title'),
           onKeyDown: onNavKey,
           onDragOver: (event) => {
             if (!isSessionDrag(event)) return;
             event.preventDefault();
             if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-            setDropActive(true);
+            setDropZone((current) => (current === 'favorites' ? current : 'section'));
           },
           onDragLeave: (event) => {
             if (event.currentTarget.contains(event.relatedTarget)) return;
-            setDropActive(false);
+            setDropZone(null);
           },
           onDrop: (event) => {
             const sessionId = readDragId(event, knownIds);
-            setDropActive(false);
+            setDropZone(null);
             setDropBefore(null);
             if (sessionId === undefined) return;
             event.preventDefault();
@@ -1824,7 +1876,16 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               searching
                 ? matches.length === 0
                   ? h('div', { className: 'drs-inlineEmpty' }, t('inline.search.empty'))
-                  : matches.map((row) => renderRow(row))
+                  : [
+                      ...matches.slice(0, SEARCH_LIMIT).map((row) => renderRow(row)),
+                      matches.length > SEARCH_LIMIT
+                        ? h(
+                            'div',
+                            { key: 'more', className: 'drs-searchMore' },
+                            t('inline.search.more', { n: matches.length - SEARCH_LIMIT }),
+                          )
+                        : null,
+                    ]
                 : nothingYet
                   ? h('div', { className: 'drs-inlineEmpty' }, t('inline.noSessions'))
                   : rendered.map(renderCategory),
