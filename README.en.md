@@ -30,7 +30,7 @@ It shares the official **Workspaces** grid and interactions (36px section header
 
 It takes over the left column shell, so the group sits **above the workspace groups** instead of living on its own page, and the official session browser (search, session `…` menu, drag reorder, archived filter, workspace management) keeps working unchanged inside it.
 
-By default only Sessions that belong to a **Workspace** are listed: once an ungrouped Session (say a one-off CLI run in `/tmp`) goes idle it drops out of this section and stays in the shipped browser under "Ungrouped" — but while it is **running, waiting for you or unread**, it still shows up (nothing that needs you is hidden).
+By default only Sessions that belong to a **Workspace** are listed: an ungrouped Session (say a one-off CLI run in `/tmp`) shows up **only while it waits for your answer** (approval / question); idle, running and unread ones stay in the shipped browser under "Ungrouped".
 
 ## Layout details
 

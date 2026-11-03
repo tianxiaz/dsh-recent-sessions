@@ -408,10 +408,10 @@ window.__ModuleLoader__.load({
         // a pending Session is yellow in Favorites and Recently active too, and an
         // unread completion stays green wherever it shows up.
         const state = pending ? 'pending' : running ? 'running' : unread ? 'unread' : 'idle';
-        // Ungrouped Sessions (a one-off CLI run in /tmp, a removed Workspace) only
-        // surface while they still need attention; idle ones stay in the shipped
-        // browser's "Ungrouped" bucket instead of cluttering this section.
-        if (workspacesLoaded && state === 'idle') {
+        // Ungrouped Sessions (a one-off CLI run in /tmp, a removed Workspace) surface
+        // only while they wait for an answer; everything else about them stays in
+        // the shipped browser's "Ungrouped" bucket.
+        if (workspacesLoaded && state !== 'pending') {
           const attached =
             whereBySession.has(sessionId) ||
             (typeof summary.cwd === 'string' && whereByPath.has(summary.cwd));
