@@ -428,17 +428,10 @@ window.__ModuleLoader__.load({
       const pendingRows = topLevel.filter((row) => row.state === 'pending');
       const runningRows = topLevel.filter((row) => row.state === 'running');
       const unreadRows = topLevel.filter((row) => row.state === 'unread');
-      const highlighted = new Set();
-      for (const row of favoriteRows) highlighted.add(row.id);
-      for (const row of pendingRows) highlighted.add(row.id);
-      for (const row of runningRows) highlighted.add(row.id);
-      for (const row of unreadRows) highlighted.add(row.id);
-      const recentRows = [];
-      for (const row of topLevel) {
-        if (recentRows.length >= RECENT_LIMIT) break;
-        if (row.state !== 'idle' || highlighted.has(row.id)) continue;
-        recentRows.push(row);
-      }
+      // "Recently active" is a plain time list: the newest sessions regardless of
+      // whether they also sit in Favorites or a status group. The row marks a
+      // favorite with a ★ so the duplicate reads as intentional.
+      const recentRows = topLevel.slice(0, RECENT_LIMIT);
 
       const decorate = (row) => ({ ...row, time: relativeLabel(row.updatedAt, now, t) });
       return {
@@ -612,6 +605,7 @@ window.__ModuleLoader__.load({
 
       const renderRow = (row, options) => {
         const favorite = favoriteSet.has(row.id);
+        const mark = options !== undefined && options.mark === true && favorite;
         const selected = row.id === currentId;
         const label = t(favorite ? 'action.unfavorite' : 'action.favorite');
         return h(
@@ -643,6 +637,13 @@ window.__ModuleLoader__.load({
             h('span', { className: 'drs-name' }, row.title),
             row.where ? h('span', { className: 'drs-where' }, row.where) : null,
           ),
+          mark
+            ? h(
+                'span',
+                { className: 'drs-rowPinned', title: t('row.alsoFavorite'), 'aria-hidden': 'true' },
+                h(StarIcon, { filled: true, size: 10 }),
+              )
+            : null,
           h('span', { className: 'drs-time' }, row.time),
           favorite
             ? h(
@@ -689,7 +690,7 @@ window.__ModuleLoader__.load({
             h('span', { className: 'drs-secTitle' }, t(titleKey)),
             h('span', { className: 'drs-count' }, String(rows.length)),
           ),
-          rows.map((row) => renderRow(row)),
+          rows.map((row) => renderRow(row, { mark: key === 'recent' })),
         );
       };
 
@@ -1330,6 +1331,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-row--dropBefore{box-shadow:inset 0 2px 0 color-mix(in srgb,var(--dsw-alias-brand-primary) 78%,transparent)}
 .drs-rowWhere{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:2px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
 .drs-rowNote{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-state-warn-primary);white-space:nowrap}
+.drs-rowPinned{flex:none;display:inline-flex;align-items:center;margin-left:2px;color:var(--dsw-alias-brand-primary);opacity:.85}
 .drs-group{position:relative;display:flex;flex-direction:column}
 .drs-group>*+*{margin-top:2px}
 .drs-group+.drs-group{margin-top:4px}
@@ -1808,8 +1810,9 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         readEdges();
       };
 
-      const renderRow = (row) => {
+      const renderRow = (row, options) => {
         const favorite = favoriteSet.has(row.id);
+        const markFavorite = options !== undefined && options.markFavorite === true && favorite;
         const label = t(favorite ? 'action.unfavorite' : 'action.favorite');
         const selected = row.id === currentId;
         const pendingNote = row.state === 'pending'
@@ -1984,7 +1987,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             ? null
             : category.rows.length === 0
               ? h('div', { className: 'drs-inlineEmpty' }, t(dropZone !== null ? 'inline.drop' : 'inline.favEmpty'))
-              : visible.map((row) => renderRow(row)),
+              : visible.map((row) => renderRow(row, { markFavorite: category.key === 'recent' })),
           folded || hidden === 0
             ? null
             : h(
