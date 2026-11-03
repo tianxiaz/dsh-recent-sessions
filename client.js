@@ -29,6 +29,12 @@ window.__ModuleLoader__.load({
     const FAVORITES_KEY = 'dsh.recent-sessions.favorites.v1';
     /** How many plain "recently active" rows the panel shows. */
     const RECENT_LIMIT = 8;
+    /**
+     * How long "I just opened it" counts as activity. Opening a Session is a
+     * view, not a durable update, so the boost is deliberately short: after
+     * this window the row falls back to the Session's real durable timestamp.
+     */
+    const VIEW_BOOST_MS = 10 * 60 * 1000;
     /** Height the inline section header, its margins and the divider take before any row. */
     const SECTION_CHROME = 46;
     /** Drag payload type this plugin sets on its own rows. */
@@ -397,13 +403,14 @@ window.__ModuleLoader__.load({
         const state = pending ? 'pending' : running ? 'running' : unread ? 'unread' : 'idle';
         const lastActive = typeof summary.updatedAt === 'number' ? summary.updatedAt : 0;
         const opened = (viewed && viewed[sessionId]) || 0;
+        const justOpened = opened > 0 && now - opened <= VIEW_BOOST_MS ? opened : 0;
         rows.push({
           id: sessionId,
           title: summary.displayTitle || sessionId,
           where:
             whereBySession.get(sessionId) ||
             (summary.cwd ? whereByPath.get(summary.cwd) || basename(summary.cwd) : ''),
-          updatedAt: Math.max(lastActive, opened),
+          updatedAt: Math.max(lastActive, justOpened),
           origin: summary.origin,
           pendingKind,
           state,
