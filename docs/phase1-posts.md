@@ -1,7 +1,28 @@
 # 阶段 1 · 三条现成帖子（复制即发）
 
-配图统一用 `docs/social-preview.png`（分享卡）；群里可换成 `docs/preview-desktop-light.png`（整窗图更直观）。
 发之前 1 分钟：确认市场条目能打开（<https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/>）、仓库链接可点。
+
+## 图片（带域名，点开即可下载 / 直接贴进帖子）
+
+| 用途 | 链接 | 尺寸 / 大小 |
+|---|---|---|
+| 分享卡（Discord / X / Discussions） | <https://tianxiaz.github.io/dsh-recent-sessions/docs/social-preview.png> | 1280×640 · 176 KB |
+| 整窗示意（群 / 即刻 / 小红书） | <https://tianxiaz.github.io/dsh-recent-sessions/docs/preview-desktop-light.png> | 1200×800 · 151 KB |
+| 分区细节（带标注） | <https://tianxiaz.github.io/dsh-recent-sessions/docs/preview-light.png> | 960×1048 · 137 KB |
+| 收起态 | <https://tianxiaz.github.io/dsh-recent-sessions/docs/preview-collapsed-light.png> | 960×604 · 67 KB |
+
+**下载方式**：浏览器打开链接 → 右键「存储图像为…」；或在终端里
+
+```bash
+curl -LO https://tianxiaz.github.io/dsh-recent-sessions/docs/social-preview.png
+curl -LO https://tianxiaz.github.io/dsh-recent-sessions/docs/preview-desktop-light.png
+```
+
+**贴进 Markdown**（GitHub Discussions 里会直接渲染）：
+
+```markdown
+![preview](https://tianxiaz.github.io/dsh-recent-sessions/docs/social-preview.png)
+```
 
 ---
 
@@ -42,7 +63,11 @@ Repo: https://github.com/tianxiaz/dsh-recent-sessions
 Requires DSH `^0.2.1-rc.5`. Not compatible with the recent-sessions plugin from `huangxp12` / `whybebabo` (same panel id) — install one or the other.
 ```
 
-**图**：把 `social-preview.png` 拖进正文末尾。
+**图**（把这一行加到正文末尾，GitHub 会直接渲染）：
+
+```markdown
+![Recent Sessions in the DSH sidebar](https://tianxiaz.github.io/dsh-recent-sessions/docs/social-preview.png)
+```
 
 ---
 
@@ -66,6 +91,8 @@ Thanks for merging the listing (#11008)! Posting it here too, in case it is usef
 Market: https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/
 Repo: https://github.com/tianxiaz/dsh-recent-sessions
 Requires DSH `^0.2.1-rc.5`.
+
+![preview](https://tianxiaz.github.io/dsh-recent-sessions/docs/social-preview.png)
 ```
 
 ---
@@ -89,7 +116,10 @@ Requires DSH `^0.2.1-rc.5`.
 要装的话我可以帮你弄，装完有问题直接在这条下面说。
 ```
 
-**再发图**：`preview-desktop-light.png`（整窗，最直观看得出"长在侧栏里"）。
+**再发图**（整窗，最直观看得出"长在侧栏里"）：
+
+- 直接下载：<https://tianxiaz.github.io/dsh-recent-sessions/docs/preview-desktop-light.png>
+- 或在聊天框里粘贴这个地址，微信/飞书会自动展开成图片
 
 ---
 
