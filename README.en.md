@@ -30,6 +30,8 @@ It shares the official **Workspaces** grid and interactions (36px section header
 
 It takes over the left column shell, so the group sits **above the workspace groups** instead of living on its own page, and the official session browser (search, session `…` menu, drag reorder, archived filter, workspace management) keeps working unchanged inside it.
 
+Only Sessions that belong to a **Workspace** are listed: ungrouped Sessions (say a one-off CLI run in `/tmp`) stay out of this section and remain in the shipped browser under "Ungrouped".
+
 ## Layout details
 
 - The **section header** matches the official section header: 36px tall, 14px/20 `label-tertiary`, 4px left padding, with the title always fully visible; the title is clickable, and three 28×28 icon actions sit on the right (search sessions, collapse/expand, open in the panel).

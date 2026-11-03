@@ -381,6 +381,10 @@ window.__ModuleLoader__.load({
     function buildGroups(input) {
       const { ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed } = input;
       const archived = new Set(archivedIds || []);
+      // Only Sessions that belong to a real Workspace are listed. Ungrouped rows
+      // (a CLI run in /tmp, a Workspace that is gone) stay where the shipped
+      // browser keeps them; the section is a Workspace-scoped view on purpose.
+      const workspacesLoaded = Array.isArray(workspaceItems);
       const whereBySession = new Map();
       const whereByPath = new Map();
       for (const workspace of workspaceItems || []) {
@@ -395,6 +399,12 @@ window.__ModuleLoader__.load({
         if (!summary) continue;
         if (archived.has(sessionId)) continue;
         if (summary.blank) continue;
+        if (workspacesLoaded) {
+          const attached =
+            whereBySession.has(sessionId) ||
+            (typeof summary.cwd === 'string' && whereByPath.has(summary.cwd));
+          if (!attached) continue;
+        }
         const status = (statuses && statuses.get(sessionId)) || {};
         const pending = status.pendingInteraction !== undefined && status.pendingInteraction !== null;
         const pendingKind = pending ? status.pendingInteraction.kind : undefined;
