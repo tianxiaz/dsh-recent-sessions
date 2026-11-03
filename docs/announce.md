@@ -34,7 +34,10 @@ https://tianxiaz.github.io/dsh-recent-sessions/market/index.json
 dsh plugin --profile <你的 profile> add "git+https://github.com/tianxiaz/dsh-recent-sessions.git"
 ```
 
+市场条目：https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/
 仓库：https://github.com/tianxiaz/dsh-recent-sessions
+
+> ⚠️ 与 `huangxp12` / `whybebabo` 的最近会话插件**互斥**（面板 id 冲突），不要同时安装。
 
 ---
 
@@ -67,7 +70,10 @@ or
 dsh plugin --profile <profile> add "git+https://github.com/tianxiaz/dsh-recent-sessions.git"
 ```
 
+Market entry: https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/
 Repository: https://github.com/tianxiaz/dsh-recent-sessions
+
+> ⚠️ Not compatible with the recent-sessions plugin from `huangxp12` / `whybebabo` (panel id conflict) — install one or the other.
 
 ---
 
@@ -76,7 +82,7 @@ Repository: https://github.com/tianxiaz/dsh-recent-sessions
 | 场合 | 用什么 |
 |---|---|
 | DSH 用户群 / 社区讨论区 | 中文正文 + `social-preview.png` |
-| GitHub Discussions / Issue | 英文正文 + 仓库链接 |
+| GitHub Discussions / Issue | 英文正文 + 市场条目链接 |
 | 掘金 / V2EX / 即刻 / 小红书 | 中文正文 + 整窗图 `preview-desktop-light.png` |
 | X / Twitter | 英文一句话 + `social-preview.png` + 仓库链接 |
 
@@ -91,14 +97,18 @@ Repository: https://github.com/tianxiaz/dsh-recent-sessions
 > 给 DSH 写了个小插件「最近会话」：像官方「工作区」一样长在左侧栏里的分区 —— 收藏 / 运行中 / 等待你的回应 / 完成未读 / 最近活跃一屏直达。
 > 亮点：每个会话行都有 ☆ 一点即收藏；整段可收起到一行；标题右侧就地搜索；官方会话区一行没改。
 > 安装：Plugins → Discover → Add index source → `https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`
+> 市场条目：https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/
 > 仓库：https://github.com/tianxiaz/dsh-recent-sessions
+> （与 huangxp12 / whybebabo 的最近会话插件互斥，二选一）
 
 **English**
 
 > Built a small DSH plugin: **Recent Sessions** — a section in the left sidebar built on the official Workspaces grid (favorites / running / waiting-for-you / unread / recently active).
 > Highlights: a one-click ☆ on every session row, collapse the whole block to one line, search in place, official browser untouched.
 > Install: Plugins → Discover → Add index source → `https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`
+> Market: https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/
 > Repo: https://github.com/tianxiaz/dsh-recent-sessions
+> (Incompatible with the recent-sessions plugin from huangxp12 / whybebabo — pick one.)
 
 ---
 

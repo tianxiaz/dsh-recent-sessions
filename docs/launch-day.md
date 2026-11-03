@@ -7,8 +7,8 @@
 
 ## T-30 分钟：发布前核对
 
-- [ ] 社区市场 PR 已合并：`https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/11008` 显示 **Merged**
-- [ ] 网页条目可访问：`https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/`（合并后几分钟生成）
+- [x] 社区市场 PR 已合并：`https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/11008` 显示 **Merged**（2026-11-02）
+- [x] 网页条目可访问：`https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/`
 - [ ] DSH 里「设置 → 插件市场」能搜到 `dsh-recent-sessions`
 - [ ] 索引返回 **0.1.2**：`https://tianxiaz.github.io/dsh-recent-sessions/market/index.json`
 - [ ] 落地页正常：`https://tianxiaz.github.io/dsh-recent-sessions/`
@@ -56,6 +56,10 @@
 **⑤ "收藏存哪儿？换设备会同步吗"**
 
 > 存在当前浏览器 localStorage（三个 key：`dsh.recent-sessions.favorites.v1` / `.inline.open.v1` / `.cats.v1`）。目前不跨设备同步；想要云端同步可以提 issue。
+
+**⑤′ "能不能和 XX 最近会话插件一起装"**
+
+> 不能。它接管的是 `sidebar` 这个单占位槽，且注册的面板 id 是 `recent-sessions`，`huangxp12` / `whybebabo` 的版本用的是同一个 id，同时装会互相顶掉。二选一，禁用其中一个即可。
 
 **⑥ "支持哪个 DSH 版本"**
 
