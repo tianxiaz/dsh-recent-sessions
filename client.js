@@ -400,6 +400,9 @@ window.__ModuleLoader__.load({
         const pendingKind = pending ? status.pendingInteraction.kind : undefined;
         const running = !pending && status.running === true;
         const unread = !pending && !running && status.completionUnread === true;
+        // The dot is a property of the Session, never of the group it renders in:
+        // a pending Session is yellow in Favorites and Recently active too, and an
+        // unread completion stays green wherever it shows up.
         const state = pending ? 'pending' : running ? 'running' : unread ? 'unread' : 'idle';
         const lastActive = typeof summary.updatedAt === 'number' ? summary.updatedAt : 0;
         const opened = (viewed && viewed[sessionId]) || 0;
