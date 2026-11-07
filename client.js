@@ -328,6 +328,68 @@ window.__ModuleLoader__.load({
     }
 
     /** Sidebar glyph: a clock with a quick-access sparkle. */
+    /** Official "..." glyph (IconEllipsisOutlineRegular, 16px grid). */
+    function EllipsisIcon({ size = 14 }) {
+      return h(
+        'svg',
+        { width: size, height: size, viewBox: '0 0 16 16', fill: 'none', 'aria-hidden': 'true' },
+        h('path', {
+          d: 'M3 9C3.55228 9 4 8.55228 4 8C4 7.44772 3.55228 7 3 7C2.44772 7 2 7.44772 2 8C2 8.55228 2.44772 9 3 9Z',
+          fill: 'currentColor',
+        }),
+        h('path', {
+          d: 'M8 9C8.55228 9 9 8.55228 9 8C9 7.44772 8.55228 7 8 7C7.44772 7 7 7.44772 7 8C7 8.55228 7.44772 9 8 9Z',
+          fill: 'currentColor',
+        }),
+        h('path', {
+          d: 'M13 9C13.5523 9 14 8.55228 14 8C14 7.44772 13.5523 7 13 7C12.4477 7 12 7.44772 12 8C12 8.55228 12.4477 9 13 9Z',
+          fill: 'currentColor',
+        }),
+      );
+    }
+
+    /** Official archive glyph (IconArchiveOutlineRegular, 16px grid). */
+    function ArchiveIcon({ size = 14 }) {
+      return h(
+        'svg',
+        {
+          width: size,
+          height: size,
+          viewBox: '0 0 16 16',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1,
+          'aria-hidden': 'true',
+        },
+        h('path', {
+          d: 'M13.5 2.5H2.5C1.94772 2.5 1.5 2.94772 1.5 3.5V4.5C1.5 5.05228 1.94772 5.5 2.5 5.5H13.5C14.0523 5.5 14.5 5.05228 14.5 4.5V3.5C14.5 2.94772 14.0523 2.5 13.5 2.5Z',
+        }),
+        h('path', {
+          d: 'M2.5 5.5V13.5C2.5 13.7652 2.60536 14.0196 2.79289 14.2071C2.98043 14.3946 3.23478 14.5 3.5 14.5H12.5C12.7652 14.5 13.0196 14.3946 13.2071 14.2071C13.3946 14.0196 13.5 13.7652 13.5 13.5V5.5',
+        }),
+        h('path', { d: 'M6.5 9.5H9.5' }),
+      );
+    }
+
+    /** Official pin glyph (IconPinFillRegular, 16px grid). */
+    function PinIcon({ size = 14 }) {
+      return h(
+        'svg',
+        { width: size, height: size, viewBox: '0 0 16 16', fill: 'none', 'aria-hidden': 'true' },
+        h('path', {
+          d: 'M9.96976 1.70572L13.1554 3.93629L10.9019 8.12317L11.5158 11.605L10.7192 12.7427L2.52767 7.00693L3.3243 5.86922L6.80612 5.25528L9.96976 1.70572Z',
+          fill: 'currentColor',
+          stroke: 'currentColor',
+          strokeWidth: 1,
+          strokeLinejoin: 'round',
+        }),
+        h('path', {
+          d: 'M6.05285 9.47511C6.27284 9.16094 6.70586 9.08458 7.02003 9.30457C7.3342 9.52455 7.41055 9.95757 7.19057 10.2717L3.98587 14.4708L3.21223 13.9291L6.05285 9.47511Z',
+          fill: 'currentColor',
+        }),
+      );
+    }
+
     /** Arrow hitting a top bar — "move to front" for a favorite row. */
     function MoveTopIcon({ size = 12 }) {
       return h(
@@ -379,7 +441,7 @@ window.__ModuleLoader__.load({
      * array, so React sees new rows only when one of the inputs changed.
      */
     function buildGroups(input) {
-      const { ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed } = input;
+      const { ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds } = input;
       const archived = new Set(archivedIds || []);
       // Only Sessions that belong to a real Workspace are listed. Ungrouped rows
       // (a CLI run in /tmp, a Workspace that is gone) stay where the shipped
@@ -433,6 +495,9 @@ window.__ModuleLoader__.load({
         });
       }
       rows.sort((left, right) => right.updatedAt - left.updatedAt);
+      // Pinned Sessions lead every group, as they do in the shipped browser.
+      const pinnedSet = new Set(pinnedIds || []);
+      rows.sort((left, right) => (pinnedSet.has(right.id) ? 1 : 0) - (pinnedSet.has(left.id) ? 1 : 0));
       const rowById = new Map(rows.map((row) => [row.id, row]));
 
       const favoriteRows = [];
@@ -527,6 +592,7 @@ window.__ModuleLoader__.load({
       const workspaceItems = useWorkspaces((snapshot) => snapshot.items);
       const archivedIds = useWorkspaces((snapshot) => snapshot.archivedSessionIds);
       const favorites = useFavorites((list) => list);
+      const pinnedIds = useWorkspaces((state) => state.pinnedSessionIds);
       const now = useMinuteTick();
       const [dropTarget, setDropTarget] = useState(null);
       const [viewed, setViewed] = useState(readViewed);
@@ -541,8 +607,8 @@ window.__ModuleLoader__.load({
 
       const favoriteSet = useMemo(() => new Set(favorites || []), [favorites]);
       const groups = useMemo(
-        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed }),
-        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed],
+        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds }),
+        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds],
       );
       /** The session the main column currently shows, read from the mainView retain count. */
       const hostCurrentId = useMemo(() => {
@@ -656,7 +722,7 @@ window.__ModuleLoader__.load({
           mark
             ? h(
                 'span',
-                { className: 'drs-rowPinned', title: t('row.alsoFavorite'), 'aria-hidden': 'true' },
+                { className: 'drs-rowFav', title: t('row.alsoFavorite'), 'aria-hidden': 'true' },
                 h(StarIcon, { filled: true, size: 10 }),
               )
             : null,
@@ -1347,7 +1413,17 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-row--dropBefore{box-shadow:inset 0 2px 0 color-mix(in srgb,var(--dsw-alias-brand-primary) 78%,transparent)}
 .drs-rowWhere{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:2px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
 .drs-rowNote{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-state-warn-primary);white-space:nowrap}
-.drs-rowPinned{flex:none;display:inline-flex;align-items:center;margin-left:2px;color:var(--dsw-alias-brand-primary);opacity:.85}
+.drs-rowFav{flex:none;display:inline-flex;align-items:center;margin-left:2px;color:var(--dsw-alias-brand-primary);opacity:.85}
+.drs-rowPinIcon{flex:none;display:inline-flex;align-items:center;margin-left:4px;color:var(--dsw-alias-label-tertiary)}
+.drs-rowBtn{flex:none;display:none;place-items:center;width:18px;height:18px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
+.drs-row:hover .drs-rowBtn,.drs-row:focus-within .drs-rowBtn{display:grid}
+.drs-rowBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
+.drs-rowBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
+.drs-rowBtn--on{color:var(--dsw-alias-brand-primary)}
+.drs-menu{position:fixed;z-index:1000;min-width:184px;padding:4px;border-radius:10px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);box-shadow:0 10px 28px rgba(0,0,0,.28)}
+.drs-menuItem{display:flex;align-items:center;width:100%;height:30px;padding:0 10px;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;line-height:18px;text-align:left;cursor:pointer}
+.drs-menuItem:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.drs-menuSep{height:1px;margin:4px 6px;background:var(--dsw-alias-border-l1)}
 .drs-group{position:relative;display:flex;flex-direction:column}
 .drs-group>*+*{margin-top:2px}
 .drs-group+.drs-group{margin-top:4px}
@@ -1531,6 +1607,63 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       );
     }
 
+    /** One row's "..." menu: the actions the shipped strip offers, plus this plugin's. */
+    function RowMenu(props) {
+      const { t, menu, favorite, pinned, onClose, onFavorite, onMoveToTop, onPin, onUnpin, onArchive } = props;
+      const ref = React.useRef(null);
+      useEffect(() => {
+        const onPointerDown = (event) => {
+          if (ref.current && ref.current.contains(event.target)) return;
+          onClose();
+        };
+        const onKeyDown = (event) => {
+          if (event.key === 'Escape') onClose();
+        };
+        document.addEventListener('pointerdown', onPointerDown, true);
+        document.addEventListener('keydown', onKeyDown, true);
+        return () => {
+          document.removeEventListener('pointerdown', onPointerDown, true);
+          document.removeEventListener('keydown', onKeyDown, true);
+        };
+      }, [onClose]);
+      const item = (key, label, run) =>
+        h(
+          'button',
+          {
+            key,
+            type: 'button',
+            role: 'menuitem',
+            className: 'drs-menuItem',
+            onClick: () => {
+              run();
+              onClose();
+            },
+          },
+          label,
+        );
+      return h(
+        'div',
+        {
+          ref,
+          className: 'drs-menu',
+          role: 'menu',
+          style: { top: menu.top + 'px', left: menu.left + 'px' },
+        },
+        item('pin', t(pinned ? 'action.unpin' : 'action.pin'), pinned ? onUnpin : onPin),
+        item('fav', t(favorite ? 'action.unfavorite' : 'action.favorite'), onFavorite),
+        favorite ? item('top', t('action.moveToTop'), onMoveToTop) : null,
+        h('div', { key: 'sep', className: 'drs-menuSep', role: 'separator' }),
+        item('archive', t('action.archive'), onArchive),
+        item('copy', t('action.copyId'), () => {
+          try {
+            void navigator.clipboard.writeText(menu.id);
+          } catch (error) {
+            /* clipboard permission denied; nothing to do */
+          }
+        }),
+      );
+    }
+
     /**
      * The sidebar's inline "最近会话" section.
      *
@@ -1568,11 +1701,12 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const scrollWriteAt = React.useRef(0);
       const sectionRef = React.useRef(null);
 
+      const pinnedIds = useWorkspaces((state) => state.pinnedSessionIds);
       const workspaceItems = workspaces ? workspaces.items : undefined;
       const archivedIds = workspaces ? workspaces.archivedSessionIds : undefined;
       const groups = useMemo(
-        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed }),
-        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed],
+        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds }),
+        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds],
       );
       /** The session the main column currently shows, read from the mainView retain count. */
       const hostCurrentId = useMemo(() => {
@@ -1615,6 +1749,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         return known;
       }, [ids, byId]);
       const favoriteSet = useMemo(() => new Set(favorites || []), [favorites]);
+      const pinnedSet = useMemo(() => new Set(pinnedIds || []), [pinnedIds]);
 
       const categories = [
         {
@@ -1828,6 +1963,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 
       const renderRow = (row, options) => {
         const favorite = favoriteSet.has(row.id);
+        const pinned = pinnedSet.has(row.id);
         const markFavorite = options !== undefined && options.markFavorite === true && favorite;
         const label = t(favorite ? 'action.unfavorite' : 'action.favorite');
         const selected = row.id === currentId;
@@ -1904,23 +2040,54 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             h('span', { className: 'drs-dot drs-dot--' + row.state, title: t('dot.' + row.state) }),
           ),
           h('span', { className: 'drs-rowTitle' }, highlight(row.title)),
-          pendingNote ? h('span', { className: 'drs-rowNote' }, pendingNote) : h('span', { className: 'drs-rowTime' }, row.time),
-          favorite
+          markFavorite
             ? h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'drs-rowTop',
-                  'aria-label': t('action.moveToTop'),
-                  title: t('action.moveToTop'),
-                  onClick: (event) => {
-                    event.stopPropagation();
-                    moveFavoriteToFront(row.id);
-                  },
-                },
-                h(MoveTopIcon, { size: 12 }),
+                'span',
+                { className: 'drs-rowFav', title: t('row.alsoFavorite'), 'aria-hidden': 'true' },
+                h(StarIcon, { filled: true, size: 10 }),
               )
             : null,
+          pendingNote ? h('span', { className: 'drs-rowNote' }, pendingNote) : h('span', { className: 'drs-rowTime' }, row.time),
+          pinned
+            ? h(
+                'span',
+                { className: 'drs-rowPinIcon', role: 'img', 'aria-label': t('row.pinned'), title: t('row.pinned') },
+                h(PinIcon, { size: 12 }),
+              )
+            : null,
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'drs-rowBtn',
+              'aria-label': t('action.more'),
+              title: t('action.more'),
+              onClick: (event) => {
+                event.stopPropagation();
+                const rect = event.currentTarget.getBoundingClientRect();
+                setRowMenu({
+                  id: row.id,
+                  top: Math.min(rect.bottom + 4, window.innerHeight - 200),
+                  left: Math.max(8, Math.min(rect.left, window.innerWidth - 210)),
+                });
+              },
+            },
+            h(EllipsisIcon, { size: 14 }),
+          ),
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'drs-rowBtn',
+              'aria-label': t('action.archive'),
+              title: t('action.archive'),
+              onClick: (event) => {
+                event.stopPropagation();
+                archiveSession(row.id);
+              },
+            },
+            h(ArchiveIcon, { size: 14 }),
+          ),
           h(
             'button',
             {
@@ -1934,6 +2101,20 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               },
             },
             h(StarIcon, { filled: favorite, size: 12 }),
+          ),
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'drs-rowBtn' + (pinned ? ' drs-rowBtn--on' : ''),
+              'aria-label': pinned ? t('action.unpin') : t('action.pin'),
+              title: pinned ? t('action.unpin') : t('action.pin'),
+              onClick: (event) => {
+                event.stopPropagation();
+                (pinned ? unpinSession : pinSession)(row.id);
+              },
+            },
+            h(PinIcon, { size: 13 }),
           ),
         );
       };
@@ -2145,6 +2326,20 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 ),
               ],
         ),
+        rowMenu
+          ? h(RowMenu, {
+              t,
+              menu: rowMenu,
+              favorite: favoriteSet.has(rowMenu.id),
+              pinned: pinnedSet.has(rowMenu.id),
+              onClose: () => setRowMenu(null),
+              onFavorite: () => toggleFavorite(rowMenu.id),
+              onMoveToTop: () => moveFavoriteToFront(rowMenu.id),
+              onPin: () => pinSession(rowMenu.id),
+              onUnpin: () => unpinSession(rowMenu.id),
+              onArchive: () => archiveSession(rowMenu.id),
+            })
+          : null,
         effectiveOpen
           ? h(
               'div',
@@ -2275,6 +2470,9 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         insertFavoriteBefore,
         moveFavoriteToFront,
         openSession,
+        pinSession,
+        unpinSession,
+        archiveSession,
         usePanels,
         useEntryPins,
         useEntryActions,
@@ -2472,6 +2670,9 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                   addFavorite,
                   insertFavoriteBefore,
                   moveFavoriteToFront,
+                  pinSession,
+                  unpinSession,
+                  archiveSession,
                   maxHeight: sectionMax,
                   useSessions,
                   useSessionStatus,
@@ -2561,6 +2762,20 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           console.error('recent-sessions: open session failed', error);
         }
       };
+      /** Run one host session action; failures land in the console, never in the UI. */
+      const runSessionAction = (label, run) => {
+        try {
+          const result = run();
+          if (result && typeof result.catch === 'function') {
+            result.catch((error) => console.error('recent-sessions: ' + label + ' failed', error));
+          }
+        } catch (error) {
+          console.error('recent-sessions: ' + label + ' failed', error);
+        }
+      };
+      const pinSession = (sessionId) => runSessionAction('pin', () => ctx.uiWorkspace.pinSession(sessionId));
+      const unpinSession = (sessionId) => runSessionAction('unpin', () => ctx.uiWorkspace.unpinSession(sessionId));
+      const archiveSession = (sessionId) => runSessionAction('archive', () => ctx.uiWorkspace.archiveSession(sessionId));
       const startSession = (workspaceId, options) => {
         try {
           ctx.uiWorkspace.startSession(workspaceId, options);
@@ -2635,6 +2850,9 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               insertFavoriteBefore: favorites.insertBefore,
               moveFavoriteToFront: favorites.moveToFront,
               openSession,
+              pinSession,
+              unpinSession,
+              archiveSession,
               hooks: {
                 panels: panels.source,
                 entryPins: pins.unpinned,

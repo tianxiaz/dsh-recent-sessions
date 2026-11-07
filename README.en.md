@@ -25,6 +25,8 @@ It shares the official **Workspaces** grid and interactions (36px section header
 - favorites can be reordered by dragging, and hovering a favorite reveals ↑ "move to top";
 - a category you folded or expanded by hand keeps that state across hard reloads — so does the section's scroll offset;
 - pending rows say "Approval" / "Question" instead of only a relative time.
+- the hover strip mirrors the shipped one: **⋯ more / archive / ☆ favorite / pin**; the ⋯ menu holds pin · favorite · move to top (favorites only) · archive · copy session id;
+- pinned sessions lead **every** group and carry the same pin glyph as the shipped browser (pin state is shared with it).
 
 **The problem it solves**: with a few tasks in flight, "what is running, what finished and I haven't read, what is waiting for my approval or answer, and which ones do I keep coming back to" takes a lot of scrolling. This section pins **favorites / running / waiting for you / unread completions / recently active** to the top, with yellow-blue-green status dots, so the next click is obvious — and favoriting is either a ☆ click or dragging the session row onto Favorites.
 
