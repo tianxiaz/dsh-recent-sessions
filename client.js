@@ -2110,6 +2110,22 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           ),
           h('span', { className: 'drs-rowTitle' }, highlight(row.title)),
           pendingNote ? h('span', { className: 'drs-rowNote' }, pendingNote) : h('span', { className: 'drs-rowTime' }, row.time),
+          pinKey === undefined
+            ? null
+            : h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'drs-rowBtn' + (pinned ? ' drs-rowBtn--on' : ''),
+                  'aria-label': pinned ? t('action.unpin') : t('action.pin'),
+                  title: pinned ? t('action.unpin') : t('action.pin'),
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    togglePin(pinKey, row.id);
+                  },
+                },
+                pinned ? h(PinIcon, { size: 13 }) : h(PinOutlineIcon, { size: 13 }),
+              ),
           pinned
             ? h(
                 'button',
@@ -2174,22 +2190,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             },
             h(StarIcon, { filled: favorite, size: 12 }),
           ),
-          pinKey === undefined
-            ? null
-            : h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'drs-rowBtn' + (pinned ? ' drs-rowBtn--on' : ''),
-                  'aria-label': pinned ? t('action.unpin') : t('action.pin'),
-                  title: pinned ? t('action.unpin') : t('action.pin'),
-                  onClick: (event) => {
-                    event.stopPropagation();
-                    togglePin(pinKey, row.id);
-                  },
-                },
-                pinned ? h(PinIcon, { size: 13 }) : h(PinOutlineIcon, { size: 13 }),
-              ),
         );
       };
 
