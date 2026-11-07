@@ -1424,8 +1424,9 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-rowWhere{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:2px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
 .drs-rowNote{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-state-warn-primary);white-space:nowrap}
 
-.drs-rowPinIcon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-left:4px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-brand-primary);cursor:pointer}
-.drs-rowPinIcon:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.drs-rowPinIcon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:20px;margin-left:6px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-caption);cursor:pointer}
+.drs-rowPinIcon:hover{color:var(--dsw-alias-label-secondary)}
+.drs-row:hover .drs-rowPinIcon,.drs-row:focus-within .drs-rowPinIcon{display:none}
 .drs-rowBtn{flex:none;display:none;place-items:center;width:18px;height:18px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 .drs-row:hover .drs-rowBtn,.drs-row:focus-within .drs-rowBtn{display:grid}
 .drs-rowBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
