@@ -1544,6 +1544,27 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       }
     }
 
+    /** Session ids pinned from this section, newest first (its own pin scope). */
+    function readLocalPins() {
+      try {
+        const raw = window.localStorage.getItem('dsh.recent-sessions.pinned.v1');
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    /** Remember this section's pin order. */
+    function writeLocalPins(ids) {
+      try {
+        window.localStorage.setItem('dsh.recent-sessions.pinned.v1', JSON.stringify(ids));
+      } catch (error) {
+        /* storage may be unavailable; the in-memory state still works */
+      }
+    }
+
     /** Session ids this browser opened, with the timestamp of the last open. */
     function readViewed() {
       try {
@@ -1708,6 +1729,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [pendingOpen, setPendingOpen] = useState(undefined);
       const [dragFold, setDragFold] = useState(false);
       const [rowMenu, setRowMenu] = useState(null);
+      const [localPins, setLocalPins] = useState(readLocalPins);
       const searchRef = React.useRef(null);
       const listRef = React.useRef(null);
       const savedScroll = React.useRef(readInlineScroll());
@@ -1715,11 +1737,40 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const sectionRef = React.useRef(null);
 
       const pinnedIds = useWorkspaces((state) => state.pinnedSessionIds);
+      /** This section's pin scope first, then whatever the shipped browser also pins. */
+      const mergedPins = useMemo(() => {
+        const seen = new Set();
+        const merged = [];
+        for (const id of localPins) {
+          if (!seen.has(id)) {
+            seen.add(id);
+            merged.push(id);
+          }
+        }
+        for (const id of pinnedIds || []) {
+          if (!seen.has(id)) {
+            seen.add(id);
+            merged.push(id);
+          }
+        }
+        return merged;
+      }, [localPins, pinnedIds]);
+      const pinnedSet = useMemo(() => new Set(mergedPins), [mergedPins]);
+      /** Flip this section's own pin and mirror it to the shipped browser's pin list. */
+      const togglePin = (sessionId) => {
+        const wasPinned = localPins.indexOf(sessionId) >= 0;
+        const next = wasPinned ? localPins.filter((value) => value !== sessionId) : [sessionId].concat(localPins);
+        setLocalPins(next);
+        writeLocalPins(next);
+        if (wasPinned) unpinSession(sessionId);
+        else pinSession(sessionId);
+      };
+
       const workspaceItems = workspaces ? workspaces.items : undefined;
       const archivedIds = workspaces ? workspaces.archivedSessionIds : undefined;
       const groups = useMemo(
-        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds }),
-        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds],
+        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds: mergedPins }),
+        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, mergedPins],
       );
       /** The session the main column currently shows, read from the mainView retain count. */
       const hostCurrentId = useMemo(() => {
@@ -1762,8 +1813,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         return known;
       }, [ids, byId]);
       const favoriteSet = useMemo(() => new Set(favorites || []), [favorites]);
-      const pinnedSet = useMemo(() => new Set(pinnedIds || []), [pinnedIds]);
-
       const categories = [
         {
           key: 'favorites',
@@ -2116,7 +2165,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               title: pinned ? t('action.unpin') : t('action.pin'),
               onClick: (event) => {
                 event.stopPropagation();
-                (pinned ? unpinSession : pinSession)(row.id);
+                togglePin(row.id);
               },
             },
             pinned ? h(PinIcon, { size: 13 }) : h(PinOutlineIcon, { size: 13 }),
@@ -2340,8 +2389,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               onClose: () => setRowMenu(null),
               onFavorite: () => toggleFavorite(rowMenu.id),
               onMoveToTop: () => moveFavoriteToFront(rowMenu.id),
-              onPin: () => pinSession(rowMenu.id),
-              onUnpin: () => unpinSession(rowMenu.id),
+              onPin: () => togglePin(rowMenu.id),
+              onUnpin: () => togglePin(rowMenu.id),
               onArchive: () => archiveSession(rowMenu.id),
             })
           : null,
