@@ -1543,6 +1543,30 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       }
     }
 
+    /** Where a favorite sat before it was pinned, so unpinning can put it back. */
+    function readPinAnchors() {
+      try {
+        const raw = window.localStorage.getItem('dsh.recent-sessions.pinanchor.v1');
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    /** Remember/forget the favorite that followed one session before pinning. */
+    function writePinAnchor(sessionId, anchorId) {
+      try {
+        const map = readPinAnchors();
+        if (anchorId === undefined) delete map[sessionId];
+        else map[sessionId] = anchorId;
+        window.localStorage.setItem('dsh.recent-sessions.pinanchor.v1', JSON.stringify(map));
+      } catch (error) {
+        /* storage may be unavailable; the in-memory state still works */
+      }
+    }
+
     /** Per-category pin order: the pinned ids of each group, newest first. */
     function readCategoryPins() {
       try {
@@ -1747,6 +1771,26 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const isPinnedIn = (key, sessionId) => (categoryPins[key] || []).indexOf(sessionId) >= 0;
       /** Pin/unpin inside one category; other categories keep their own order. */
       const togglePin = (key, sessionId) => {
+        const already = isPinnedIn(key, sessionId);
+        // Favorites are a manual order, so pinning must edit that order and
+        // remember the row it followed; unpinning then restores the slot.
+        if (key === 'favorites') {
+          if (!already) {
+            const list = favorites || [];
+            const at = list.indexOf(sessionId);
+            writePinAnchor(sessionId, at >= 0 ? list[at + 1] : undefined);
+            moveFavoriteToFront(sessionId);
+          } else {
+            const anchors = readPinAnchors();
+            const anchorId = anchors[sessionId];
+            if (anchorId !== undefined && (favorites || []).indexOf(anchorId) >= 0) {
+              insertFavoriteBefore(sessionId, anchorId);
+            } else {
+              insertFavoriteBefore(sessionId, undefined);
+            }
+            writePinAnchor(sessionId, undefined);
+          }
+        }
         setCategoryPins((previous) => {
           const current = previous[key] || [];
           const next = current.indexOf(sessionId) >= 0
