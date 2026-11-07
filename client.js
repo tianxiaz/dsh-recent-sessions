@@ -1426,7 +1426,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-rowWhere{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:2px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
 .drs-rowNote{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-state-warn-primary);white-space:nowrap}
 
-.drs-rowPinIcon{flex:none;display:inline-flex;align-items:center;margin-left:4px;color:var(--dsw-alias-label-tertiary)}
+.drs-rowPinIcon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-left:4px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-brand-primary);cursor:pointer}
+.drs-rowPinIcon:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-rowBtn{flex:none;display:none;place-items:center;width:18px;height:18px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 .drs-row:hover .drs-rowBtn,.drs-row:focus-within .drs-rowBtn{display:grid}
 .drs-rowBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
@@ -1758,7 +1759,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const pinnedSet = useMemo(() => new Set(mergedPins), [mergedPins]);
       /** Flip this section's own pin and mirror it to the shipped browser's pin list. */
       const togglePin = (sessionId) => {
-        const wasPinned = localPins.indexOf(sessionId) >= 0;
+        const wasPinned = pinnedSet.has(sessionId);
         const next = wasPinned ? localPins.filter((value) => value !== sessionId) : [sessionId].concat(localPins);
         setLocalPins(next);
         writeLocalPins(next);
@@ -2104,8 +2105,17 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           pendingNote ? h('span', { className: 'drs-rowNote' }, pendingNote) : h('span', { className: 'drs-rowTime' }, row.time),
           pinned
             ? h(
-                'span',
-                { className: 'drs-rowPinIcon', role: 'img', 'aria-label': t('row.pinned'), title: t('row.pinned') },
+                'button',
+                {
+                  type: 'button',
+                  className: 'drs-rowPinIcon',
+                  'aria-label': t('action.unpin'),
+                  title: t('action.unpin'),
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    togglePin(row.id);
+                  },
+                },
                 h(PinIcon, { size: 12 }),
               )
             : null,
