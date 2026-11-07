@@ -707,7 +707,6 @@ window.__ModuleLoader__.load({
 
       const renderRow = (row, options) => {
         const favorite = favoriteSet.has(row.id);
-        const mark = options !== undefined && options.mark === true && favorite;
         const selected = row.id === currentId;
         const label = t(favorite ? 'action.unfavorite' : 'action.favorite');
         return h(
@@ -739,13 +738,6 @@ window.__ModuleLoader__.load({
             h('span', { className: 'drs-name' }, row.title),
             row.where ? h('span', { className: 'drs-where' }, row.where) : null,
           ),
-          mark
-            ? h(
-                'span',
-                { className: 'drs-rowFav', title: t('row.alsoFavorite'), 'aria-hidden': 'true' },
-                h(StarIcon, { filled: true, size: 10 }),
-              )
-            : null,
           h('span', { className: 'drs-time' }, row.time),
           favorite
             ? h(
@@ -792,7 +784,7 @@ window.__ModuleLoader__.load({
             h('span', { className: 'drs-secTitle' }, t(titleKey)),
             h('span', { className: 'drs-count' }, String(rows.length)),
           ),
-          rows.map((row) => renderRow(row, { mark: key === 'recent' })),
+          rows.map((row) => renderRow(row)),
         );
       };
 
@@ -1433,8 +1425,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-row--dropBefore{box-shadow:inset 0 2px 0 color-mix(in srgb,var(--dsw-alias-brand-primary) 78%,transparent)}
 .drs-rowWhere{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:2px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
 .drs-rowNote{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-state-warn-primary);white-space:nowrap}
-.drs-rowFav{flex:none;display:inline-flex;align-items:center;margin-left:2px;color:var(--dsw-alias-brand-primary);opacity:.85}
-.drs-row:hover .drs-rowFav{display:none}
+
 .drs-rowPinIcon{flex:none;display:inline-flex;align-items:center;margin-left:4px;color:var(--dsw-alias-label-tertiary)}
 .drs-rowBtn{flex:none;display:none;place-items:center;width:18px;height:18px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 .drs-row:hover .drs-rowBtn,.drs-row:focus-within .drs-rowBtn{display:grid}
@@ -1986,7 +1977,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const renderRow = (row, options) => {
         const favorite = favoriteSet.has(row.id);
         const pinned = pinnedSet.has(row.id);
-        const markFavorite = options !== undefined && options.markFavorite === true && favorite;
         const label = t(favorite ? 'action.unfavorite' : 'action.favorite');
         const selected = row.id === currentId;
         const pendingNote = row.state === 'pending'
@@ -2062,13 +2052,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             h('span', { className: 'drs-dot drs-dot--' + row.state, title: t('dot.' + row.state) }),
           ),
           h('span', { className: 'drs-rowTitle' }, highlight(row.title)),
-          markFavorite
-            ? h(
-                'span',
-                { className: 'drs-rowFav', title: t('row.alsoFavorite'), 'aria-hidden': 'true' },
-                h(StarIcon, { filled: true, size: 10 }),
-              )
-            : null,
           pendingNote ? h('span', { className: 'drs-rowNote' }, pendingNote) : h('span', { className: 'drs-rowTime' }, row.time),
           pinned
             ? h(
@@ -2206,7 +2189,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             ? null
             : category.rows.length === 0
               ? h('div', { className: 'drs-inlineEmpty' }, t(dropZone !== null ? 'inline.drop' : 'inline.favEmpty'))
-              : visible.map((row) => renderRow(row, { markFavorite: category.key === 'recent' })),
+              : visible.map((row) => renderRow(row)),
           folded || hidden === 0
             ? null
             : h(
