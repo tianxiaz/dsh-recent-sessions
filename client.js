@@ -86,6 +86,7 @@ window.__ModuleLoader__.load({
       'inline.search.more': '还有 {n} 条，输入更多关键词缩小范围',
       'inline.noSessions': '还没有会话：先在左侧新建一个',
       'inline.crashed': '侧栏组件出错，已切回官方会话列表',
+      'inline.failed': '最近会话加载失败，详情见控制台',
       'inline.reload': '重新加载',
       'inline.pending.approval': '待授权',
       'inline.pending.question': '待回答',
@@ -139,6 +140,7 @@ window.__ModuleLoader__.load({
       'inline.search.more': '{n} more matches — type more to narrow it down',
       'inline.noSessions': 'No sessions yet — start one from the sidebar',
       'inline.crashed': 'The sidebar component failed — showing the built-in session list',
+      'inline.failed': 'Recent sessions failed to load — see the console',
       'inline.reload': 'Reload',
       'inline.pending.approval': 'Approval',
       'inline.pending.question': 'Question',
@@ -1695,6 +1697,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [viewed, setViewed] = useState(readViewed);
       const [pendingOpen, setPendingOpen] = useState(undefined);
       const [dragFold, setDragFold] = useState(false);
+      const [rowMenu, setRowMenu] = useState(null);
       const searchRef = React.useRef(null);
       const listRef = React.useRef(null);
       const savedScroll = React.useRef(readInlineScroll());
@@ -2660,7 +2663,10 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           wide
             ? h(
                 Guard,
-                { key: 'inline', fallback: null },
+                {
+                  key: 'inline',
+                  fallback: h('div', { className: 'drs-inlineEmpty' }, t('inline.failed')),
+                },
                 h(RecentInlineGroup, {
                   wide,
                   t,
