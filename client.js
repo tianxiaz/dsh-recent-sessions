@@ -373,6 +373,24 @@ window.__ModuleLoader__.load({
       );
     }
 
+    /** Official outline pin glyph (IconPinOutlineRegular, 16px grid). */
+    function PinOutlineIcon({ size = 14 }) {
+      return h(
+        'svg',
+        { width: size, height: size, viewBox: '0 0 16 16', fill: 'none', 'aria-hidden': 'true' },
+        h('path', {
+          d: 'M9.96976 1.70572L13.1554 3.93629L10.9019 8.12317L11.5158 11.605L10.7192 12.7427L2.52767 7.00693L3.3243 5.86922L6.80612 5.25528L9.96976 1.70572Z',
+          stroke: 'currentColor',
+          strokeWidth: 1,
+          strokeLinejoin: 'round',
+        }),
+        h('path', {
+          d: 'M6.05285 9.47511C6.27284 9.16094 6.70586 9.08458 7.02003 9.30457C7.3342 9.52455 7.41055 9.95757 7.19057 10.2717L3.98587 14.4708L3.21223 13.9291L6.05285 9.47511Z',
+          fill: 'currentColor',
+        }),
+      );
+    }
+
     /** Official pin glyph (IconPinFillRegular, 16px grid). */
     function PinIcon({ size = 14 }) {
       return h(
@@ -1416,6 +1434,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-rowWhere{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:2px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
 .drs-rowNote{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-state-warn-primary);white-space:nowrap}
 .drs-rowFav{flex:none;display:inline-flex;align-items:center;margin-left:2px;color:var(--dsw-alias-brand-primary);opacity:.85}
+.drs-row:hover .drs-rowFav{display:none}
 .drs-rowPinIcon{flex:none;display:inline-flex;align-items:center;margin-left:4px;color:var(--dsw-alias-label-tertiary)}
 .drs-rowBtn{flex:none;display:none;place-items:center;width:18px;height:18px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 .drs-row:hover .drs-rowBtn,.drs-row:focus-within .drs-rowBtn{display:grid}
@@ -2117,7 +2136,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 (pinned ? unpinSession : pinSession)(row.id);
               },
             },
-            h(PinIcon, { size: 13 }),
+            pinned ? h(PinIcon, { size: 13 }) : h(PinOutlineIcon, { size: 13 }),
           ),
         );
       };
