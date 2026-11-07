@@ -461,7 +461,7 @@ window.__ModuleLoader__.load({
      * array, so React sees new rows only when one of the inputs changed.
      */
     function buildGroups(input) {
-      const { ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds } = input;
+      const { ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed } = input;
       const archived = new Set(archivedIds || []);
       // Only Sessions that belong to a real Workspace are listed. Ungrouped rows
       // (a CLI run in /tmp, a Workspace that is gone) stay where the shipped
@@ -516,8 +516,6 @@ window.__ModuleLoader__.load({
       }
       rows.sort((left, right) => right.updatedAt - left.updatedAt);
       // Pinned Sessions lead every group, as they do in the shipped browser.
-      const pinnedSet = new Set(pinnedIds || []);
-      rows.sort((left, right) => (pinnedSet.has(right.id) ? 1 : 0) - (pinnedSet.has(left.id) ? 1 : 0));
       const rowById = new Map(rows.map((row) => [row.id, row]));
 
       const favoriteRows = [];
@@ -627,8 +625,8 @@ window.__ModuleLoader__.load({
 
       const favoriteSet = useMemo(() => new Set(favorites || []), [favorites]);
       const groups = useMemo(
-        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds }),
-        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds],
+        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed }),
+        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed],
       );
       /** The session the main column currently shows, read from the mainView retain count. */
       const hostCurrentId = useMemo(() => {
@@ -1545,22 +1543,28 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       }
     }
 
-    /** Session ids pinned from this section, newest first (its own pin scope). */
-    function readLocalPins() {
+    /** Per-category pin order: the pinned ids of each group, newest first. */
+    function readCategoryPins() {
       try {
-        const raw = window.localStorage.getItem('dsh.recent-sessions.pinned.v1');
-        if (!raw) return [];
+        const raw = window.localStorage.getItem('dsh.recent-sessions.pins.v1');
+        if (!raw) return {};
         const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : [];
+        if (!parsed || typeof parsed !== 'object') return {};
+        const map = {};
+        for (const key of INLINE_CATEGORY_KEYS) {
+          const value = parsed[key];
+          if (Array.isArray(value)) map[key] = value.filter((id) => typeof id === 'string');
+        }
+        return map;
       } catch (error) {
-        return [];
+        return {};
       }
     }
 
-    /** Remember this section's pin order. */
-    function writeLocalPins(ids) {
+    /** Remember the pinned ids of every category. */
+    function writeCategoryPins(map) {
       try {
-        window.localStorage.setItem('dsh.recent-sessions.pinned.v1', JSON.stringify(ids));
+        window.localStorage.setItem('dsh.recent-sessions.pins.v1', JSON.stringify(map));
       } catch (error) {
         /* storage may be unavailable; the in-memory state still works */
       }
@@ -1730,7 +1734,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [pendingOpen, setPendingOpen] = useState(undefined);
       const [dragFold, setDragFold] = useState(false);
       const [rowMenu, setRowMenu] = useState(null);
-      const [localPins, setLocalPins] = useState(readLocalPins);
       const searchRef = React.useRef(null);
       const listRef = React.useRef(null);
       const savedScroll = React.useRef(readInlineScroll());
@@ -1738,40 +1741,42 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const sectionRef = React.useRef(null);
 
       const pinnedIds = useWorkspaces((state) => state.pinnedSessionIds);
-      /** This section's pin scope first, then whatever the shipped browser also pins. */
-      const mergedPins = useMemo(() => {
-        const seen = new Set();
-        const merged = [];
-        for (const id of localPins) {
-          if (!seen.has(id)) {
-            seen.add(id);
-            merged.push(id);
+      const [categoryPins, setCategoryPins] = useState(readCategoryPins);
+      /** Pinned ids of one category, newest pin first. */
+      const pinsOf = (key) => categoryPins[key] || [];
+      const isPinnedIn = (key, sessionId) => (categoryPins[key] || []).indexOf(sessionId) >= 0;
+      /** Pin/unpin inside one category; other categories keep their own order. */
+      const togglePin = (key, sessionId) => {
+        setCategoryPins((previous) => {
+          const current = previous[key] || [];
+          const next = current.indexOf(sessionId) >= 0
+            ? { ...previous, [key]: current.filter((value) => value !== sessionId) }
+            : { ...previous, [key]: [sessionId].concat(current) };
+          writeCategoryPins(next);
+          return next;
+        });
+      };
+      /** Pinned rows lead their own category, in pin order. */
+      const orderedRows = (key, rows) => {
+        const pins = pinsOf(key);
+        if (pins.length === 0) return rows;
+        const remaining = new Map(rows.map((row) => [row.id, row]));
+        const head = [];
+        for (const id of pins) {
+          const row = remaining.get(id);
+          if (row) {
+            head.push(row);
+            remaining.delete(id);
           }
         }
-        for (const id of pinnedIds || []) {
-          if (!seen.has(id)) {
-            seen.add(id);
-            merged.push(id);
-          }
-        }
-        return merged;
-      }, [localPins, pinnedIds]);
-      const pinnedSet = useMemo(() => new Set(mergedPins), [mergedPins]);
-      /** Flip this section's own pin and mirror it to the shipped browser's pin list. */
-      const togglePin = (sessionId) => {
-        const wasPinned = pinnedSet.has(sessionId);
-        const next = wasPinned ? localPins.filter((value) => value !== sessionId) : [sessionId].concat(localPins);
-        setLocalPins(next);
-        writeLocalPins(next);
-        if (wasPinned) unpinSession(sessionId);
-        else pinSession(sessionId);
+        return head.concat(Array.from(remaining.values()));
       };
 
       const workspaceItems = workspaces ? workspaces.items : undefined;
       const archivedIds = workspaces ? workspaces.archivedSessionIds : undefined;
       const groups = useMemo(
-        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, pinnedIds: mergedPins }),
-        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed, mergedPins],
+        () => buildGroups({ ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed }),
+        [ids, byId, statuses, workspaceItems, archivedIds, favorites, t, now, viewed],
       );
       /** The session the main column currently shows, read from the mainView retain count. */
       const hostCurrentId = useMemo(() => {
@@ -2026,7 +2031,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 
       const renderRow = (row, options) => {
         const favorite = favoriteSet.has(row.id);
-        const pinned = pinnedSet.has(row.id);
+        const pinKey = options && options.pinKey ? options.pinKey : undefined;
+        const pinned = pinKey !== undefined && isPinnedIn(pinKey, row.id);
         const label = t(favorite ? 'action.unfavorite' : 'action.favorite');
         const selected = row.id === currentId;
         const pendingNote = row.state === 'pending'
@@ -2113,7 +2119,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                   title: t('action.unpin'),
                   onClick: (event) => {
                     event.stopPropagation();
-                    togglePin(row.id);
+                    togglePin(pinKey, row.id);
                   },
                 },
                 h(PinIcon, { size: 12 }),
@@ -2131,6 +2137,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 const rect = event.currentTarget.getBoundingClientRect();
                 setRowMenu({
                   id: row.id,
+                  pinKey,
                   top: Math.min(rect.bottom + 4, window.innerHeight - 200),
                   left: Math.max(8, Math.min(rect.left, window.innerWidth - 210)),
                 });
@@ -2166,20 +2173,22 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             },
             h(StarIcon, { filled: favorite, size: 12 }),
           ),
-          h(
-            'button',
-            {
-              type: 'button',
-              className: 'drs-rowBtn' + (pinned ? ' drs-rowBtn--on' : ''),
-              'aria-label': pinned ? t('action.unpin') : t('action.pin'),
-              title: pinned ? t('action.unpin') : t('action.pin'),
-              onClick: (event) => {
-                event.stopPropagation();
-                togglePin(row.id);
-              },
-            },
-            pinned ? h(PinIcon, { size: 13 }) : h(PinOutlineIcon, { size: 13 }),
-          ),
+          pinKey === undefined
+            ? null
+            : h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'drs-rowBtn' + (pinned ? ' drs-rowBtn--on' : ''),
+                  'aria-label': pinned ? t('action.unpin') : t('action.pin'),
+                  title: pinned ? t('action.unpin') : t('action.pin'),
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    togglePin(pinKey, row.id);
+                  },
+                },
+                pinned ? h(PinIcon, { size: 13 }) : h(PinOutlineIcon, { size: 13 }),
+              ),
         );
       };
 
@@ -2187,8 +2196,9 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         if (category.rows.length === 0 && category.key !== 'favorites') return null;
         const folded = isCollapsed(category.key);
         const isExpanded = expanded[category.key] === true;
-        const visible = isExpanded ? category.rows : category.rows.slice(0, category.limit);
-        const hidden = category.rows.length - visible.length;
+        const ordered = orderedRows(category.key, category.rows);
+        const visible = isExpanded ? ordered : ordered.slice(0, category.limit);
+        const hidden = ordered.length - visible.length;
         const dropRing = dropZone === 'favorites' && category.key === 'favorites';
         return h(
           'div',
@@ -2248,7 +2258,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             ? null
             : category.rows.length === 0
               ? h('div', { className: 'drs-inlineEmpty' }, t(dropZone !== null ? 'inline.drop' : 'inline.favEmpty'))
-              : visible.map((row) => renderRow(row)),
+              : visible.map((row) => renderRow(row, { pinKey: category.key })),
           folded || hidden === 0
             ? null
             : h(
@@ -2395,12 +2405,12 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               t,
               menu: rowMenu,
               favorite: favoriteSet.has(rowMenu.id),
-              pinned: pinnedSet.has(rowMenu.id),
+              pinned: rowMenu.pinKey !== undefined && isPinnedIn(rowMenu.pinKey, rowMenu.id),
               onClose: () => setRowMenu(null),
               onFavorite: () => toggleFavorite(rowMenu.id),
               onMoveToTop: () => moveFavoriteToFront(rowMenu.id),
-              onPin: () => togglePin(rowMenu.id),
-              onUnpin: () => togglePin(rowMenu.id),
+              onPin: () => togglePin(rowMenu.pinKey, rowMenu.id),
+              onUnpin: () => togglePin(rowMenu.pinKey, rowMenu.id),
               onArchive: () => archiveSession(rowMenu.id),
             })
           : null,
