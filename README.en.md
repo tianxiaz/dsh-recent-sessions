@@ -57,7 +57,7 @@ Three ways:
 
 Favorites keep their display order and are stored in the browser (see Data).
 
-Favoriting does not remove a session from **Recently active**: that group is a plain time list (the last five sessions you touched, favorited or not), and a favorited row carries a **★** at the end. Seeing it in both places is intentional.
+Favoriting does not remove a session from **Recently active**: that group is a plain time list (the last five sessions you touched, favorited or not). A favorited row carries exactly **one** indicator — the gold **★** button at the end, which stays visible — so a row never shows two stars.
 
 ## Install
 
