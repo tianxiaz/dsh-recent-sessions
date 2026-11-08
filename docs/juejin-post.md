@@ -14,7 +14,9 @@
 3. 右侧设置：
    - **分类**：`人工智能`（或 `前端`，取一个即可）
    - **标签**：`DeepSeek`、`AI`、`开源`、`前端`、`TypeScript`（最多 5 个）
-   - **封面**：可上传 `docs/social-preview.png`
+   - **封面**：用 `docs/juejin-cover.png`（1280×720，16:9，标题已排好字）
+     - 在线地址：<https://tianxiaz.github.io/dsh-recent-sessions/docs/juejin-cover.png>
+     - 备选：`docs/preview-desktop-light.png`（1200×800，纯截图）；不建议用 1280×640 的分享卡当封面（比例偏扁）
    - 原创声明：勾上
 4. **发布** → 进入审核（几分钟到几小时）；审核期间自己能看到，别人看不到；
 5. 发布后把链接发我，我核对渲染（代码块、图片）。
