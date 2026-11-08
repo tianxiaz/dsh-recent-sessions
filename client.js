@@ -1424,13 +1424,12 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-rowWhere{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:2px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
 .drs-rowNote{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-state-warn-primary);white-space:nowrap}
 
-.drs-rowPinIcon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:20px;margin-left:0;padding:0;border:0;background:none;color:var(--dsw-alias-label-caption);cursor:pointer}
-.drs-row:hover .drs-rowPinIcon,.drs-row:focus-within .drs-rowPinIcon{display:none}
-.drs-rowBtn{flex:none;display:none;place-items:center;width:18px;height:18px;margin:0;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
-.drs-row:hover .drs-rowBtn,.drs-row:focus-within .drs-rowBtn{display:grid}
+.drs-rowBtn{flex:none;display:grid;visibility:hidden;place-items:center;width:16px;height:16px;margin:0;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
+.drs-row:hover .drs-rowBtn,.drs-row:focus-within .drs-rowBtn{visibility:visible}
 .drs-rowBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
 .drs-rowBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
 .drs-rowBtn--on{color:var(--dsw-alias-brand-primary)}
+.drs-rowPinBtn--on{visibility:visible}
 .drs-menu{position:fixed;z-index:1000;min-width:184px;padding:4px;border-radius:10px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);box-shadow:0 10px 28px rgba(0,0,0,.28)}
 .drs-menuItem{display:flex;align-items:center;width:100%;height:30px;padding:0 10px;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;line-height:18px;text-align:left;cursor:pointer}
 .drs-menuItem:hover{background:var(--dsw-alias-interactive-bg-hover)}
@@ -1461,9 +1460,9 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-rowSlot{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:20px}
 .drs-rowTitle{flex:1;min-width:0;margin:0 6px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px}
 .drs-rowTime{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}
-.drs-rowStar{flex:none;display:none;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
-.drs-row:hover .drs-rowTime,.drs-row:hover .drs-rowNote{display:none}
-.drs-row:hover .drs-rowStar,.drs-rowStar--on{display:grid}
+.drs-rowStar{flex:none;display:grid;visibility:hidden;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
+
+.drs-row:hover .drs-rowStar,.drs-row:focus-within .drs-rowStar,.drs-rowStar--on{visibility:visible}
 .drs-rowTop{flex:none;display:none;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 .drs-row:hover .drs-rowTop,.drs-row:focus-within .drs-rowTop{display:grid}
 .drs-rowTop:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
@@ -2207,7 +2206,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 'button',
                 {
                   type: 'button',
-                  className: 'drs-rowBtn drs-rowPinBtn' + (pinned ? ' drs-rowBtn--on' : ''),
+                  className: 'drs-rowBtn drs-rowPinBtn' + (pinned ? ' drs-rowBtn--on drs-rowPinBtn--on' : ''),
                   'aria-label': pinned ? t('action.unpin') : t('action.pin'),
                   title: pinned ? t('action.unpin') : t('action.pin'),
                   onClick: (event) => {
@@ -2217,22 +2216,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 },
                 pinned ? h(PinIcon, { size: 13 }) : h(PinOutlineIcon, { size: 13 }),
               ),
-          pinned
-            ? h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'drs-rowPinIcon',
-                  'aria-label': t('action.unpin'),
-                  title: t('action.unpin'),
-                  onClick: (event) => {
-                    event.stopPropagation();
-                    togglePin(pinKey, row.id);
-                  },
-                },
-                h(PinIcon, { size: 14 }),
-              )
-            : null,
         );
       };
 
