@@ -1,0 +1,116 @@
+# 掘金发布指南 + 现成稿件
+
+## 一、注册（5 分钟）
+
+1. 打开 <https://juejin.cn/> → 右上角 **登录 / 注册**；
+2. 可选：手机号验证码，或第三方登录（微信 / 微博 / GitHub）；
+3. **必须绑定手机号** —— 按《网络安全法》，未绑定手机号只能阅读、点赞、收藏，**不能发文章/评论/沸点**（来源：[掘金账号系统](https://juejin.cn/book/6844733795329900551/section/6844733795376054285)）；
+4. 去 <https://juejin.cn/user/settings/profile> 设昵称、头像、一句话简介（建议写"DSH 插件作者"这类，方便读者判断）。
+
+## 二、发文章（10 分钟）
+
+1. 右上角 **创作者中心** → **写文章**（或直接开 <https://juejin.cn/editor/drafts/new>）；
+2. 标题、正文（支持 Markdown，代码块用 ```lang）；
+3. 右侧设置：
+   - **分类**：`人工智能`（或 `前端`，取一个即可）
+   - **标签**：`DeepSeek`、`AI`、`开源`、`前端`、`TypeScript`（最多 5 个）
+   - **封面**：可上传 `docs/social-preview.png`
+   - 原创声明：勾上
+4. **发布** → 进入审核（几分钟到几小时）；审核期间自己能看到，别人看不到；
+5. 发布后把链接发我，我核对渲染（代码块、图片）。
+
+> 提示：新账号前几篇容易被限流，标题别写成广告；正文开头 3 行决定读者是否继续。
+
+---
+
+## 三、现成稿件（可直接粘贴）
+
+**标题**
+
+```
+我给 DSH 左侧栏加了一个「最近会话」：一次接管官方侧栏外壳的实践
+```
+
+**正文**
+
+```markdown
+> 背景：DeepSeek Harness（DSH）的左侧栏里，「工作区」下面挂着一堆会话。会话一多，「哪个在跑、哪个跑完了还没看、哪个在等我授权」就得翻半天。我写了个插件，把这五类会话提到了「工作区」上方，并且**看起来就是官方侧栏的一部分**。
+
+![整窗示意](https://tianxiaz.github.io/dsh-recent-sessions/docs/preview-desktop-light.png)
+
+## 一、为什么不做一个浮层
+
+市面上的同类插件基本是三种形态：点一下弹一个浮层、挂在侧栏底部的一段列表、或者干脆开一个独立面板。它们的共同问题是：**和官方侧栏不是一套东西**——网格、行高、hover 行为、滚动条各写一套，用起来总有"贴上去"的感觉。
+
+我想试另一条路：能不能**就在官方侧栏里，长出一个和「工作区」同构的分区**。
+
+## 二、先看约束：DSH 的侧栏是"单占位槽"
+
+翻一下 `@deepseek-ai/dsh-client-ui-workspace` 和 `dsh-client-ui-sidebar` 就能发现：
+
+- `sidebar`：整个左列外壳（品牌行、新会话、面板列表、页脚），占位者是官方的 `SidebarRoot`；
+- `sidebar.workspaces`：会话浏览区，占位者是官方 `WorkspaceBrowser`。
+
+两个槽都是 **single**，插件没法"在旁边插一节"。要么替换、要么什么都不做。
+
+![](https://tianxiaz.github.io/dsh-recent-sessions/docs/social-preview.png)
+
+## 三、方案：接管外壳，把官方会话区原样放回去
+
+做法其实很朴素：
+
+1. 在 bundle patch 里 `- id: ui-sidebar` + `disabled: true`，禁用官方外壳；
+2. 插件注册 `sidebar` 占位，声明与官方**同名**的 8 个子槽（`brand.mark` / `brand.name` / `toggle.badge` / `panellist` / `panellist.actions` / `workspaces` / `settings` / `footer.action`）；
+3. 在 `sidebar.workspaces` 里**原样渲染**官方 `WorkspaceBrowser` —— 搜索、会话菜单、拖拽排序、归档筛选、工作区管理全部保留；
+4. 在它上面插入自己的「最近会话」分区。
+
+代价也明确：品牌行、新会话按钮、面板图标这些外壳由插件渲染，几何要对着官方量（我量到的基准是 36px 分区标题 / 34px 分组行 / 32px 会话行 / 28px 溢出行，行间 2px、分组间 4px），DSH 改版时得跟着对齐。
+
+## 四、几个实现细节
+
+**状态点直接复用宿主的状态语义**：黄 = 等待授权/回答、蓝 = 运行中、绿 = 完成未读。状态是**会话的属性**，不是分组的属性——同一个会话出现在收藏和最近活跃里，颜色必须一致。
+
+**悬停动作走官方槽位**：官方会话行的 hover 条来自 `sidebar.workspaces.session.row.action`（内置 archive 100 / pin 200），我按 `order: 150` 注册了 ☆ 收藏按钮。于是官方的每一行也自动带上了收藏。
+
+**置顶按分类生效**：置顶不是全局排序，而是"我当前在看的这个列表"的排序——在「最近活跃」置顶只影响最近活跃，收藏仍然是手动顺序，取消置顶会插回原位（记住它原来后面的那条）。
+
+**空间要给官方列表让路**：分区最多占可视高度的 45%（上限 420px），「工作区」至少 55%；窗口很矮时分区只留标题一行。拖动工作区里的会话时，分区自动折叠成一行、标题变成投放区——这些细节决定了它是"帮忙"还是"添乱"。
+
+**崩溃要兜底**：接管 `sidebar` 意味着插件挂了左栏就空白。所以整个侧栏套了一层 error boundary，出错时退化成「提示 + 重新加载 + 官方会话列表」，而不是一片空白。
+
+## 五、效果
+
+- 收藏 / 运行中 / 等待你的回应 / 完成未读 / 最近活跃，一屏直达；
+- 每个会话行（含官方行）都能一点 ☆ 收藏；
+- 悬停动作和官方一致：⋯ / 归档 / 收藏 / 置顶；⋯ 菜单里还有"移到最前""复制会话 ID"；
+- 整段可收起到一行，标题右侧就地搜索（命中高亮、回车打开第一条），支持 ↑↓ 键盘浏览。
+
+![收起态](https://tianxiaz.github.io/dsh-recent-sessions/docs/preview-collapsed-light.png)
+
+## 六、安装
+
+```
+Plugins → Discover → Add index source
+https://tianxiaz.github.io/dsh-recent-sessions/market/index.json
+```
+
+或 `dsh plugin --profile <profile> add "git+https://github.com/tianxiaz/dsh-recent-sessions.git"`
+
+- 仓库：https://github.com/tianxiaz/dsh-recent-sessions
+- 市场：https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/
+- 要求 DSH `^0.2.1-rc.5`；MIT；纯前端、无网络请求
+- 与 `huangxp12` / `whybebabo` 的最近会话插件互斥（同一面板 id），二选一
+
+## 七、小结
+
+如果你的产品里也有"单占位槽 + 想插一节"的需求，我这次的经验是：**别绕开约束去做浮层，接管它、然后把官方组件原样放回去**。用户感知不到你做了什么，但每一处对齐都在替他省注意力。
+```
+
+---
+
+## 四、注意
+
+- 代码块不要贴大段源码，贴"关键约束 + 结论"更容易被读完；
+- 配图三张足够：整窗、分享卡、收起态（链接已内置）；
+- 结尾别写"求 star"，写"有问题欢迎提 issue"；
+- 发布后 24 小时内回评论，掘金的评论权重也影响推荐。
