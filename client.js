@@ -1424,7 +1424,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-rowWhere{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:2px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary)}
 .drs-rowNote{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-state-warn-primary);white-space:nowrap}
 
-.drs-rowPinIcon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:20px;margin-left:6px;padding:0;border:0;background:none;color:var(--dsw-alias-label-caption);cursor:pointer}
+.drs-rowPinIcon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:20px;margin-left:0;padding:0;border:0;background:none;color:var(--dsw-alias-label-caption);cursor:pointer}
 .drs-row:hover .drs-rowPinIcon,.drs-row:focus-within .drs-rowPinIcon{display:none}
 .drs-rowBtn{flex:none;display:none;place-items:center;width:18px;height:18px;margin:0;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 .drs-row:hover .drs-rowBtn,.drs-row:focus-within .drs-rowBtn{display:grid}
@@ -1454,7 +1454,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-flip{transform:rotate(180deg)}
 .drs-projectTitle{flex:1;min-width:0;margin:0 6px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px}
 .drs-projectCount{flex:none;margin-right:6px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}
-.drs-row{box-sizing:border-box;display:flex;align-items:center;height:32px;padding:0 8px 0 20px;border-radius:8px;color:var(--dsw-alias-label-primary);cursor:pointer;user-select:none}
+.drs-row{box-sizing:border-box;display:flex;align-items:center;gap:6px;height:32px;padding:0 8px 0 20px;border-radius:8px;color:var(--dsw-alias-label-primary);cursor:pointer;user-select:none}
 .drs-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-row--selected{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-row:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
