@@ -1,5 +1,9 @@
 # DSH 官方 Discussions 帖子（0.1.8，可直接粘贴）
 
+> ✅ 已发布：<https://github.com/deepseek-ai/deepseek-harness/discussions/12593>（2026-11-08）
+> 另两条在 awesome-dsh-plugin：<https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/discussions/11551> · [/11552](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/discussions/11552)
+> 复核：图片经 camo 代理正常渲染、市场/仓库链接可点、`Show and tell` 分类需在页面上确认。
+
 **入口**：<https://github.com/deepseek-ai/deepseek-harness/discussions> → **New discussion**
 **分类**：Show and tell（没有就选最接近"展示/插件"的）
 **标题**：
