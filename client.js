@@ -1569,7 +1569,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-flip{transform:rotate(180deg)}
 .drs-projectTitle{flex:1;min-width:0;margin:0 6px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px}
 .drs-projectCount{flex:none;margin-right:6px;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}
-.drs-row{box-sizing:border-box;display:flex;align-items:center;gap:6px;height:32px;padding:0 8px 0 20px;border-radius:8px;color:var(--dsw-alias-label-primary);cursor:pointer;user-select:none}
+.drs-row{box-sizing:border-box;display:flex;align-items:center;gap:6px;height:32px;padding:0 8px;border-radius:8px;color:var(--dsw-alias-label-primary);cursor:pointer;user-select:none}
 .drs-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-row--selected{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-row:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
