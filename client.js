@@ -44,6 +44,15 @@ window.__ModuleLoader__.load({
     /** Simplified Chinese dictionary (the key-set source of truth). */
     const zh = {
       'page.title': '最近会话',
+      'page.search.placeholder': '搜索会话标题或工作区…',
+      'page.filter.all': '全部',
+      'page.more': '再显示 {n} 条',
+      'page.hits': '共 {n} 条',
+      'page.noMatches': '没有匹配的会话',
+      'page.filter.favorites': '收藏',
+      'page.filter.pending': '等待回应',
+      'page.filter.running': '运行中',
+      'page.filter.unread': '未读',
       'page.subtitle':
         '运行中、等待你回应、完成未读和收藏的会话集中在这里。把会话行拖到「收藏」，或点会话旁的 ☆ 即可固定。',
       'page.loading': '正在载入会话…',
@@ -593,6 +602,15 @@ window.__ModuleLoader__.load({
 .drs-star:hover{background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-brand-primary)}
 .drs-star:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
 .drs-empty{margin:2px 6px 6px;padding:12px;border:1px dashed var(--dsw-alias-border-l2);border-radius:10px;font-size:12px;color:var(--dsw-alias-label-secondary);text-align:center}
+.drs-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+.drs-search{flex:1 1 220px;min-width:160px;height:32px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l4);border-radius:8px;background:none;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;outline:none}
+.drs-search:focus-visible{border-color:var(--dsw-alias-brand-primary)}
+.drs-chips{display:flex;flex-wrap:wrap;gap:6px}
+.drs-chip{height:28px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l3);border-radius:999px;background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;cursor:pointer}
+.drs-chip:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.drs-chip--on{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary)}
+.drs-more{display:block;width:100%;margin:6px 0 2px;padding:6px 10px;border:.5px dashed var(--dsw-alias-border-l3);border-radius:8px;background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;cursor:pointer}
+.drs-more:hover{background:var(--dsw-alias-interactive-bg-hover)}
 `;
 
     /** Styles for the star button inside the shipped Session row strip. */
@@ -623,6 +641,9 @@ window.__ModuleLoader__.load({
       const pinnedIds = useWorkspaces((state) => state.pinnedSessionIds);
       const now = useMinuteTick();
       const [dropTarget, setDropTarget] = useState(null);
+      const [filter, setFilter] = useState('all');
+      const [query, setQuery] = useState('');
+      const [shown, setShown] = useState({});
       const [viewed, setViewed] = useState(readViewed);
       const [pendingOpen, setPendingOpen] = useState(undefined);
 
@@ -672,6 +693,20 @@ window.__ModuleLoader__.load({
         });
       }, [hostCurrentId]);
       const currentId = pendingOpen !== undefined ? pendingOpen : hostCurrentId;
+
+      /** Page size per section: render in slices so hundreds of rows stay fast. */
+      const PAGE_SIZE = 60;
+      const needle = query.trim().toLowerCase();
+      const matchesQuery = (row) => {
+        if (!needle) return true;
+        const title = row.title ? row.title.toLowerCase() : '';
+        const where = row.where ? row.where.toLowerCase() : '';
+        return title.indexOf(needle) >= 0 || where.indexOf(needle) >= 0;
+      };
+      const sliceOf = (key, rows) => {
+        const limit = shown[key] !== undefined ? shown[key] : PAGE_SIZE;
+        return { visible: rows.slice(0, limit), rest: Math.max(0, rows.length - limit) };
+      };
 
       const dragPropsOf = (row) => ({
         draggable: true,
@@ -783,6 +818,7 @@ window.__ModuleLoader__.load({
 
       const renderSection = (key, titleKey, rows) => {
         if (rows.length === 0) return null;
+        const { visible, rest } = sliceOf(key, rows);
         return h(
           'section',
           { key, className: 'drs-section' },
@@ -792,46 +828,84 @@ window.__ModuleLoader__.load({
             h('span', { className: 'drs-secTitle' }, t(titleKey)),
             h('span', { className: 'drs-count' }, String(rows.length)),
           ),
-          rows.map((row) => renderRow(row)),
+          visible.map((row) => renderRow(row)),
+          rest > 0
+            ? h(
+                'button',
+                {
+                  key: 'more',
+                  type: 'button',
+                  className: 'drs-more',
+                  onClick: () =>
+                    setShown((state) => ({ ...state, [key]: (state[key] !== undefined ? state[key] : PAGE_SIZE) + PAGE_SIZE })),
+                },
+                t('page.more', { n: rest }),
+              )
+            : null,
         );
       };
 
-      const favoritesSection = h(
-        'section',
-        {
-          key: 'favorites',
-          className: 'drs-section' + (dropTarget === 'section' ? ' drs-dropActive' : ''),
-          'aria-label': t('section.favorites'),
-          onDragOver: (event) => {
-            if (!isSessionDrag(event)) return;
-            event.preventDefault();
-            if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-            setDropTarget((current) => (current === 'section' ? current : 'section'));
+      const filtered = {
+        favorites: groups.favorites.filter(matchesQuery),
+        pending: groups.pending.filter(matchesQuery),
+        running: groups.running.filter(matchesQuery),
+        unread: groups.unread.filter(matchesQuery),
+        recent: groups.recent.filter(matchesQuery),
+      };
+
+      const renderFavorites = (rows) => {
+        const { visible, rest } = sliceOf('favorites', rows);
+        return h(
+          'section',
+          {
+            key: 'favorites',
+            className: 'drs-section' + (dropTarget === 'section' ? ' drs-dropActive' : ''),
+            'aria-label': t('section.favorites'),
+            onDragOver: (event) => {
+              if (!isSessionDrag(event)) return;
+              event.preventDefault();
+              if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+              setDropTarget((current) => (current === 'section' ? current : 'section'));
+            },
+            onDragLeave: (event) => {
+              if (event.currentTarget.contains(event.relatedTarget)) return;
+              setDropTarget((current) => (current === 'section' ? null : current));
+            },
+            onDrop: (event) => {
+              const sessionId = readDragId(event, knownIds);
+              setDropTarget(null);
+              if (sessionId === undefined) return;
+              event.preventDefault();
+              addFavorite(sessionId);
+            },
           },
-          onDragLeave: (event) => {
-            if (event.currentTarget.contains(event.relatedTarget)) return;
-            setDropTarget((current) => (current === 'section' ? null : current));
-          },
-          onDrop: (event) => {
-            const sessionId = readDragId(event, knownIds);
-            setDropTarget(null);
-            if (sessionId === undefined) return;
-            event.preventDefault();
-            addFavorite(sessionId);
-          },
-        },
-        h(
-          'div',
-          { className: 'drs-secHead' },
-          h('span', { className: 'drs-secTitle' }, t('section.favorites')),
-          groups.favorites.length > 0
-            ? h('span', { className: 'drs-count' }, String(groups.favorites.length))
+          h(
+            'div',
+            { className: 'drs-secHead' },
+            h('span', { className: 'drs-secTitle' }, t('section.favorites')),
+            rows.length > 0 ? h('span', { className: 'drs-count' }, String(rows.length)) : null,
+          ),
+          rows.length === 0
+            ? h('div', { className: 'drs-empty' }, t(dropTarget === 'section' ? 'hint.drop' : 'empty.favorites'))
+            : visible.map((row) => renderRow(row, { drop: true })),
+          rest > 0
+            ? h(
+                'button',
+                {
+                  key: 'more',
+                  type: 'button',
+                  className: 'drs-more',
+                  onClick: () =>
+                    setShown((state) => ({
+                      ...state,
+                      favorites: (state.favorites !== undefined ? state.favorites : PAGE_SIZE) + PAGE_SIZE,
+                    })),
+                },
+                t('page.more', { n: rest }),
+              )
             : null,
-        ),
-        groups.favorites.length === 0
-          ? h('div', { className: 'drs-empty' }, t(dropTarget === 'section' ? 'hint.drop' : 'empty.favorites'))
-          : groups.favorites.map((row) => renderRow(row, { drop: true })),
-      );
+        );
+      };
 
       let body;
       if (groups.total === 0) {
@@ -841,13 +915,16 @@ window.__ModuleLoader__.load({
           t(phase === 'ready' ? 'page.empty' : 'page.loading'),
         );
       } else {
-        body = [
-          favoritesSection,
-          renderSection('pending', 'section.pending', groups.pending),
-          renderSection('running', 'section.running', groups.running),
-          renderSection('unread', 'section.unread', groups.unread),
-          renderSection('recent', 'section.recent', groups.recent),
-        ];
+        const sections = [];
+        if (filter === 'all' || filter === 'favorites') sections.push(renderFavorites(filtered.favorites));
+        if (filter === 'all' || filter === 'pending') sections.push(renderSection('pending', 'section.pending', filtered.pending));
+        if (filter === 'all' || filter === 'running') sections.push(renderSection('running', 'section.running', filtered.running));
+        if (filter === 'all' || filter === 'unread') sections.push(renderSection('unread', 'section.unread', filtered.unread));
+        if (filter === 'all' || filter === 'recent') sections.push(renderSection('recent', 'section.recent', filtered.recent));
+        const hits = sections.filter(Boolean);
+        body = hits.length === 0
+          ? h('div', { className: 'drs-pageEmpty' }, t('page.noMatches'))
+          : hits;
       }
 
       return h(
@@ -866,6 +943,35 @@ window.__ModuleLoader__.load({
               { className: 'drs-headText' },
               h('h1', { className: 'drs-title' }, t('page.title')),
               h('p', { className: 'drs-sub' }, t('page.subtitle')),
+            ),
+          ),
+        ),
+        h(
+          'div',
+          { className: 'drs-tools' },
+          h('input', {
+            className: 'drs-search',
+            type: 'search',
+            placeholder: t('page.search.placeholder'),
+            value: query,
+            onChange: (event) => setQuery(event.target.value),
+            'aria-label': t('page.search.placeholder'),
+          }),
+          h(
+            'div',
+            { className: 'drs-chips' },
+            ['all', 'favorites', 'pending', 'running', 'unread'].map((key) =>
+              h(
+                'button',
+                {
+                  key,
+                  type: 'button',
+                  className: 'drs-chip' + (filter === key ? ' drs-chip--on' : ''),
+                  'aria-pressed': filter === key ? 'true' : 'false',
+                  onClick: () => setFilter(key),
+                },
+                t('page.filter.' + key),
+              ),
             ),
           ),
         ),
