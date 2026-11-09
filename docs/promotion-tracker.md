@@ -11,7 +11,7 @@
 | DSH 官方 Discussions | https://github.com/deepseek-ai/deepseek-harness/discussions/12593 | 2026-11-08 | 已发布 | 待观察 |
 | awesome Discussions #11551 | https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/discussions/11551 | 2026-11-08 | 已发布（缺图，待补） | — |
 | awesome Discussions #11552 | https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/discussions/11552 | 2026-11-08 | 已发布 | — |
-| 掘金 | https://juejin.cn/post/7705878197799370778 | 2026-11-09 | 已发布（开发工具 / DeepSeek） | 阅读 4 · 赞 0 · 评论 1 |
+| 掘金 | https://juejin.cn/post/7705878197799370778 | 2026-11-09 | 已发布（开发工具 / DeepSeek） | 11-09 10:00 → 阅读 7 · 赞 0 · 评论 1 · 收藏 0（两小时未起量） |
 | 小红书 | https://www.xiaohongshu.com/explore/6af1161c000000002c032019 | 2026-11-09 | 已发布 | 待填 |
 | 即刻 | https://web.okjike.com/u/FF560F71-6B88-4225-B77E-4891C4A788F5 | 2026-11-09 | 已发布（需补动态链接） | 待填 |
 | V2EX | — | 待定（账号需满 30 天） | 未发 | — |
