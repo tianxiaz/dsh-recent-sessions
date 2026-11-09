@@ -330,6 +330,16 @@ window.__ModuleLoader__.load({
     }
 
     /** Sidebar glyph: a clock with a quick-access sparkle. */
+    /** Crosshair — "jump to the workspace this session belongs to". */
+    function LocateIcon({ size = 12 }) {
+      return h(
+        'svg',
+        { width: size, height: size, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, 'aria-hidden': 'true' },
+        h('circle', { cx: 8, cy: 8, r: 4.2 }),
+        h('path', { d: 'M8 1.6v2.4M8 12v2.4M1.6 8h2.4M12 8h2.4', strokeLinecap: 'round' }),
+      );
+    }
+
     /** Official "..." glyph (IconEllipsisOutlineRegular, 16px grid). */
     function EllipsisIcon({ size = 14 }) {
       return h(
@@ -702,6 +712,36 @@ window.__ModuleLoader__.load({
           insertFavoriteBefore(sessionId, row.id);
         },
       });
+
+      /** Scroll the shipped browser to this session's workspace and expand it. */
+      const revealWorkspace = (label) => {
+        if (!label) return;
+        const root = document.querySelector('.drs-browserSlot');
+        if (!root) return;
+        const target = Array.from(root.querySelectorAll('[aria-expanded]')).find(
+          (element) => (element.textContent || '').indexOf(label) >= 0,
+        );
+        if (!target) return;
+        if (target.getAttribute('aria-expanded') === 'false') {
+          try {
+            target.click();
+          } catch (error) {
+            /* the row may be re-rendered mid-click; nothing to do */
+          }
+        }
+        try {
+          target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        } catch (error) {
+          /* older engines ignore the options object */
+        }
+        const previous = target.style.outline;
+        target.style.outline = '2px solid var(--dsw-alias-brand-primary)';
+        target.style.outlineOffset = '-2px';
+        window.setTimeout(() => {
+          target.style.outline = previous;
+          target.style.outlineOffset = '';
+        }, 1200);
+      };
 
       const renderRow = (row, options) => {
         const favorite = favoriteSet.has(row.id);
@@ -2150,6 +2190,22 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             { className: 'drs-rowSlot', 'aria-hidden': 'true' },
             h('span', { className: 'drs-dot drs-dot--' + row.state, title: t('dot.' + row.state) }),
           ),
+          row.where
+            ? h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'drs-rowLocate',
+                  'aria-label': t('action.reveal'),
+                  title: t('action.reveal') + ' · ' + row.where,
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    revealWorkspace(row.where);
+                  },
+                },
+                h(LocateIcon, { size: 12 }),
+              )
+            : h('span', { className: 'drs-rowLocate drs-rowLocate--empty', 'aria-hidden': 'true' }),
           h('span', { className: 'drs-rowTitle' }, highlight(row.title)),
           pendingNote ? h('span', { className: 'drs-rowNote' }, pendingNote) : h('span', { className: 'drs-rowTime' }, row.time),
           h(
