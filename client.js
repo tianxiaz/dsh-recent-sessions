@@ -713,36 +713,6 @@ window.__ModuleLoader__.load({
         },
       });
 
-      /** Scroll the shipped browser to this session's workspace and expand it. */
-      const revealWorkspace = (label) => {
-        if (!label) return;
-        const root = document.querySelector('.drs-browserSlot');
-        if (!root) return;
-        const target = Array.from(root.querySelectorAll('[aria-expanded]')).find(
-          (element) => (element.textContent || '').indexOf(label) >= 0,
-        );
-        if (!target) return;
-        if (target.getAttribute('aria-expanded') === 'false') {
-          try {
-            target.click();
-          } catch (error) {
-            /* the row may be re-rendered mid-click; nothing to do */
-          }
-        }
-        try {
-          target.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        } catch (error) {
-          /* older engines ignore the options object */
-        }
-        const previous = target.style.outline;
-        target.style.outline = '2px solid var(--dsw-alias-brand-primary)';
-        target.style.outlineOffset = '-2px';
-        window.setTimeout(() => {
-          target.style.outline = previous;
-          target.style.outlineOffset = '';
-        }, 1200);
-      };
-
       const renderRow = (row, options) => {
         const favorite = favoriteSet.has(row.id);
         const selected = row.id === currentId;
@@ -2110,6 +2080,36 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           writeInlineScroll(node.scrollTop);
         }
         readEdges();
+      };
+
+      /** Scroll the shipped browser to this session's workspace and expand it. */
+      const revealWorkspace = (label) => {
+        if (!label) return;
+        const root = document.querySelector('.drs-browserSlot');
+        if (!root) return;
+        const target = Array.from(root.querySelectorAll('[aria-expanded]')).find(
+          (element) => (element.textContent || '').indexOf(label) >= 0,
+        );
+        if (!target) return;
+        if (target.getAttribute('aria-expanded') === 'false') {
+          try {
+            target.click();
+          } catch (error) {
+            /* the row may be re-rendered mid-click; nothing to do */
+          }
+        }
+        try {
+          target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        } catch (error) {
+          /* older engines ignore the options object */
+        }
+        const previous = target.style.outline;
+        target.style.outline = '2px solid var(--dsw-alias-brand-primary)';
+        target.style.outlineOffset = '-2px';
+        window.setTimeout(() => {
+          target.style.outline = previous;
+          target.style.outlineOffset = '';
+        }, 1200);
       };
 
       const renderRow = (row, options) => {
