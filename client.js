@@ -1470,6 +1470,10 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-rowSlot{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:20px}
 .drs-rowTitle{flex:1;min-width:0;margin:0 6px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px}
 .drs-rowTime{flex:none;font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}
+.drs-rowLocate{display:none;place-items:center;width:16px;height:20px;padding:0;border:0;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
+.drs-row:hover .drs-dot,.drs-row:focus-within .drs-dot{display:none}
+.drs-row:hover .drs-rowLocate,.drs-row:focus-within .drs-rowLocate{display:grid}
+.drs-rowLocate:hover{color:var(--dsw-alias-brand-primary)}
 .drs-rowStar{flex:none;display:none;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:4px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}
 
 .drs-row:hover .drs-rowStar,.drs-row:focus-within .drs-rowStar,.drs-rowStar--on{display:grid}
@@ -2187,25 +2191,25 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           },
           h(
             'span',
-            { className: 'drs-rowSlot', 'aria-hidden': 'true' },
-            h('span', { className: 'drs-dot drs-dot--' + row.state, title: t('dot.' + row.state) }),
-          ),
-          row.where
-            ? h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'drs-rowLocate',
-                  'aria-label': t('action.reveal'),
-                  title: t('action.reveal') + ' · ' + row.where,
-                  onClick: (event) => {
-                    event.stopPropagation();
-                    revealWorkspace(row.where);
+            { className: 'drs-rowSlot' },
+            h('span', { className: 'drs-dot drs-dot--' + row.state, title: t('dot.' + row.state), 'aria-hidden': 'true' }),
+            row.where
+              ? h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'drs-rowLocate',
+                    'aria-label': t('action.reveal'),
+                    title: t('action.reveal') + ' · ' + row.where,
+                    onClick: (event) => {
+                      event.stopPropagation();
+                      revealWorkspace(row.where);
+                    },
                   },
-                },
-                h(LocateIcon, { size: 12 }),
-              )
-            : h('span', { className: 'drs-rowLocate drs-rowLocate--empty', 'aria-hidden': 'true' }),
+                  h(LocateIcon, { size: 13 }),
+                )
+              : null,
+          ),
           h('span', { className: 'drs-rowTitle' }, highlight(row.title)),
           pendingNote ? h('span', { className: 'drs-rowNote' }, pendingNote) : h('span', { className: 'drs-rowTime' }, row.time),
           h(
