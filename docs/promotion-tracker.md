@@ -6,12 +6,12 @@
 
 | 渠道 | 链接 | 发布日 | 状态 | 数据（手动更新） |
 |---|---|---|---|---|
-| GitHub 仓库 | https://github.com/tianxiaz/dsh-recent-sessions | 2026-10-31 | 已上线 | **star 2** · fork 0（11-09 首个自然 star） |
+| GitHub 仓库 | https://github.com/tianxiaz/dsh-recent-sessions | 2026-10-31 | 已上线 | **star 2** · fork 0 · issue 0（11-10） |
 | 社区市场 | https://awesome-dsh-plugin.com/p/tianxiaz/dsh-recent-sessions/ | 2026-11-02 | 已收录 | ★ 0 |
 | DSH 官方 Discussions | https://github.com/deepseek-ai/deepseek-harness/discussions/12593 | 2026-11-08 | 已发布 | 待观察 |
 | awesome Discussions #11551 | https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/discussions/11551 | 2026-11-08 | 已发布（缺图，待补） | — |
 | awesome Discussions #11552 | https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/discussions/11552 | 2026-11-08 | 已发布 | — |
-| 掘金 | https://juejin.cn/post/7705878197799370778 | 2026-11-09 | 已发布（开发工具 / DeepSeek）；已发 0.2.x 更新评论 | 11-09 15:54 → 阅读 13 · 赞 0 · 评论 2 · 收藏 0（未进推荐池） |
+| 掘金 | https://juejin.cn/post/7705878197799370778 | 2026-11-09 | 已发布（开发工具 / DeepSeek）；已发 0.2.x 更新评论 | 11-10 10:00（24h）→ 阅读 18 · 赞 0 · 评论 2 · 收藏 0 → **确认限流** |
 | 小红书 | https://www.xiaohongshu.com/explore/6af1161c000000002c032019 | 2026-11-09 | 已发布；已发 0.2.x 更新评论 | 11-09 10:05 → 赞 9 · 收藏 11 · 评论 3（**目前最好**） |
 | 即刻 | https://web.okjike.com/u/FF560F71-6B88-4225-B77E-4891C4A788F5 | 2026-11-09 | 已发布；已发 0.2.x 更新评论 | 赞 0 |
 | V2EX | — | 待定（账号需满 30 天） | 未发 | — |
