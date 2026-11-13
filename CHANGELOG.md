@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.8 — 2026-11-13
+
+- 调整：「停止并归档」的确认文案说清楚后果 —— 宿主的 `workspace/session-stop` 对定时提醒执行的是 `stopSessionTasks`（**删除**该会话的 active 提醒），不是暂停。原文案「被停止的工作不会自动继续」容易读成暂停，现在写明「定时提醒会被移除，不会自动恢复」。仅文案，无行为变化。
+
 ## 0.2.7 — 2026-11-13
 
 - 修复：归档「还有工作」的会话只弹一行报错、没有下一步 —— 宿主用 `WorkspaceArchiveError` 的 `rpcError.code === 'workspace/session-active'` 拒绝，并把「到底是什么在工作」放在 `rpcError.details.activity`（`turn` / `subagent` / `job` / `schedule` 四类）。0.2.6 只按行的状态猜，猜不到 schedule 这类活动。现在按官方契约解析这个拒绝，弹出「停止并归档此会话？」：列出将被停止的工作（例如「1 条定时提醒：…」）、「停止并归档」按钮、进行中状态与失败原因，确认后走 `archiveSession(…, { stopActivity: true })`。
