@@ -74,6 +74,18 @@
       },
       "versions": [
         {
+          "version": "0.2.4",
+          "publishTimestamp": 1794545191,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/tianxiaz/dsh-recent-sessions",
+            "commit": "be504163ed12017ffaa759ae4b7afc5ed96ea299"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.5"
+          }
+        },
+        {
           "version": "0.2.3",
           "publishTimestamp": 1794542158,
           "source": {
