@@ -88,14 +88,26 @@ window.__ModuleLoader__.load({
       'error.pin': '置顶失败：{message}',
       'error.unpin': '取消置顶失败：{message}',
       'error.archiveFailed': '归档失败：{message}',
-      'error.archive': '归档没有生效：该会话可能还有未完成的工作，先停止再归档。',
       'error.copy': '复制失败，请重试',
       'copied.id': '已复制会话 ID',
       'error.locate': '在工作区里找不到「{name}」',
       'error.newSession': '新建会话失败：{message}',
-      'confirm.archive.title': '归档还有工作的会话',
-      'confirm.archive.body': '「{name}」还有未完成的工作。归档会停止这些工作，并把它从列表移出。',
-      'confirm.archive.ok': '归档',
+      'archive.confirm.title': '停止并归档此会话？',
+      'archive.confirm.desc': '「{title}」还有正在进行的工作。归档会先停止这些工作；之后可在「工作区」里筛选已归档恢复会话，被停止的工作不会自动继续。',
+      'archive.confirm.activity': '将被停止的工作',
+      'archive.confirm.turn': '进行中的回合',
+      'archive.confirm.subagents.one': '{n} 个运行中的子智能体：{names}',
+      'archive.confirm.subagents.other': '{n} 个运行中的子智能体：{names}',
+      'archive.confirm.jobs.one': '{n} 个后台任务：{names}',
+      'archive.confirm.jobs.other': '{n} 个后台任务：{names}',
+      'archive.confirm.schedules.one': '{n} 条定时提醒：{names}',
+      'archive.confirm.schedules.other': '{n} 条定时提醒：{names}',
+      'archive.confirm.other.one': '{n} 项其他工作（{kind}）',
+      'archive.confirm.other.other': '{n} 项其他工作（{kind}）',
+      'archive.confirm.listSeparator': '、',
+      'archive.confirm.action': '停止并归档',
+      'archive.confirm.pending': '正在停止并归档…',
+      'archive.stopped': '已停止并归档',
       'action.favorite': '收藏会话',
       'action.unfavorite': '取消收藏',
       'action.open': '打开会话',
@@ -170,14 +182,26 @@ window.__ModuleLoader__.load({
       'error.pin': 'Could not pin the session: {message}',
       'error.unpin': 'Could not unpin the session: {message}',
       'error.archiveFailed': 'Could not archive the session: {message}',
-      'error.archive': 'The archive did not take effect — this session still has work; stop it first.',
       'error.copy': 'Could not copy — try again',
       'copied.id': 'Session ID copied',
       'error.locate': 'Could not find "{name}" in Workspaces',
       'error.newSession': 'Could not start a new session: {message}',
-      'confirm.archive.title': 'Archive a session with running work',
-      'confirm.archive.body': '"{name}" still has unfinished work. Archiving stops it and removes the session from the list.',
-      'confirm.archive.ok': 'Archive',
+      'archive.confirm.title': 'Stop and archive this session?',
+      'archive.confirm.desc': '"{title}" still has work in progress. Archiving stops it first; the session can be restored from the archived sessions in Workspaces, and stopped work does not resume on its own.',
+      'archive.confirm.activity': 'Work that will be stopped',
+      'archive.confirm.turn': 'a running turn',
+      'archive.confirm.subagents.one': '{n} running subagent: {names}',
+      'archive.confirm.subagents.other': '{n} running subagents: {names}',
+      'archive.confirm.jobs.one': '{n} background job: {names}',
+      'archive.confirm.jobs.other': '{n} background jobs: {names}',
+      'archive.confirm.schedules.one': '{n} scheduled reminder: {names}',
+      'archive.confirm.schedules.other': '{n} scheduled reminders: {names}',
+      'archive.confirm.other.one': '{n} other item of work ({kind})',
+      'archive.confirm.other.other': '{n} other items of work ({kind})',
+      'archive.confirm.listSeparator': ', ',
+      'archive.confirm.action': 'Stop and archive',
+      'archive.confirm.pending': 'Stopping and archiving…',
+      'archive.stopped': 'Stopped and archived',
       'action.favorite': 'Favorite session',
       'action.unfavorite': 'Remove from favorites',
       'action.open': 'Open session',
@@ -1666,6 +1690,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-modalScrim{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:rgba(10,14,20,.32)}
 .drs-modal{width:min(420px,100%);display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:14px;background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l3);box-shadow:0 18px 48px rgba(0,0,0,.22)}
 .drs-modalBody{font-size:12.5px;line-height:19px;color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere}
+.drs-activityLabel{font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);margin-bottom:2px}
+.drs-activity{margin:0;padding-left:18px;font-size:12.5px;line-height:19px;color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere}
 .drs-modalTitle{font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)}
 .drs-modalInput{height:34px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l4);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;outline:none}
 .drs-modalInput:focus-visible{border-color:var(--dsw-alias-brand-primary)}
@@ -1983,15 +2009,53 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       );
     }
 
-    /** Destructive confirm: same shell as the rename dialog, one question. */
+    /**
+     * The Host refuses an archive of a busy session with `WorkspaceArchiveError`
+     * carrying `rpcError.details.activity`; anything else is a plain failure.
+     */
+    function archiveActivity(error) {
+      if (!error || error.name !== 'WorkspaceArchiveError') return undefined;
+      const rpc = error.rpcError;
+      if (!rpc || rpc.code !== 'workspace/session-active') return undefined;
+      const activity = rpc.details && rpc.details.activity;
+      return Array.isArray(activity) ? activity : [];
+    }
+
+    /** One line per activity family, worded like the shipped archive dialog. */
+    function archiveActivityLines(activity, t) {
+      return (activity || []).map((entry) => {
+        const items = (entry && entry.items) || [];
+        const count = items.length;
+        const names = items
+          .map((item) => (item && (item.label || item.id)) || '')
+          .filter(Boolean)
+          .join(t('archive.confirm.listSeparator'));
+        const plural = count === 1 ? 'one' : 'other';
+        switch (entry && entry.kind) {
+          case 'turn':
+            return t('archive.confirm.turn');
+          case 'subagent':
+            return t('archive.confirm.subagents.' + plural, { n: count, names });
+          case 'job':
+            return t('archive.confirm.jobs.' + plural, { n: count, names });
+          case 'schedule':
+            return t('archive.confirm.schedules.' + plural, { n: count, names });
+          default:
+            return t('archive.confirm.other.' + plural, { kind: (entry && entry.kind) || 'unknown', n: count });
+        }
+      });
+    }
+
+    /** Destructive confirm: same shell as the rename dialog, one question, plus why. */
     function ConfirmDialog(props) {
-      const { t, title, body, confirmLabel, onCancel, onConfirm } = props;
+      const { t, title, body, activity, confirmLabel, pending, error, onCancel, onConfirm } = props;
+      const lines = archiveActivityLines(activity, t);
       return h(
         'div',
         {
           className: 'drs-modalScrim',
           onPointerDown: (event) => {
-            if (event.target === event.currentTarget) onCancel();
+            if (event.target === event.currentTarget && !pending) onCancel();
           },
         },
         h(
@@ -1999,11 +2063,29 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           { className: 'drs-modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
           h('div', { className: 'drs-modalTitle' }, title),
           h('div', { className: 'drs-modalBody' }, body),
+          lines.length > 0
+            ? h(
+                'div',
+                null,
+                h('div', { className: 'drs-activityLabel' }, t('archive.confirm.activity')),
+                h(
+                  'ul',
+                  { className: 'drs-activity', 'aria-label': t('archive.confirm.activity') },
+                  lines.map((line, index) => h('li', { key: 'activity-' + String(index) }, line)),
+                ),
+              )
+            : null,
+          pending ? h('div', { className: 'drs-modalBody', role: 'status' }, t('archive.confirm.pending')) : null,
+          error ? h('div', { className: 'drs-modalError', role: 'alert' }, error) : null,
           h(
             'div',
             { className: 'drs-modalActions' },
-            h('button', { type: 'button', className: 'drs-modalBtn', onClick: onCancel }, t('rename.cancel')),
-            h('button', { type: 'button', className: 'drs-modalBtn drs-modalBtn--primary', onClick: onConfirm }, confirmLabel),
+            h('button', { type: 'button', className: 'drs-modalBtn', disabled: pending === true, onClick: onCancel }, t('rename.cancel')),
+            h(
+              'button',
+              { type: 'button', className: 'drs-modalBtn drs-modalBtn--primary', disabled: pending === true, onClick: onConfirm },
+              confirmLabel,
+            ),
           ),
         ),
       );
@@ -2113,28 +2195,44 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [renamePending, setRenamePending] = useState(false);
       const [renameError, setRenameError] = useState(null);
       const [archiveTarget, setArchiveTarget] = useState(null);
+      const [archivePending, setArchivePending] = useState(false);
+      const [archiveError, setArchiveError] = useState(null);
       /**
        * Archive one row. The host refuses sessions with running work unless it is
        * asked to stop them, so a refusal opens the confirm instead of doing nothing.
        */
       const requestArchive = (row) => {
-        if (row.state === 'running' || row.state === 'pending') {
-          setArchiveTarget(row);
-          return;
-        }
+        if (archivePending) return;
         Promise.resolve(archiveSession(row.id, {})).catch((error) => {
-          if (error && (error.code === 'workspace/session-active' || error.code === 'archive/noop')) {
-            setArchiveTarget(row);
+          const activity = archiveActivity(error);
+          if (activity !== undefined) {
+            setArchiveError(null);
+            setArchiveTarget({ id: row.id, title: row.title, activity });
+            return;
           }
+          if (error && error.code === 'archive/noop') {
+            setArchiveError(null);
+            setArchiveTarget({ id: row.id, title: row.title, activity: [] });
+            return;
+          }
+          if (notify) notify('error.archiveFailed', { message: (error && error.message) || '' });
         });
       };
       const confirmArchive = () => {
         const target = archiveTarget;
-        if (!target) return;
-        setArchiveTarget(null);
-        Promise.resolve(archiveSession(target.id, { stopActivity: true })).catch(() => {
-          /* the action layer already surfaced the reason */
-        });
+        if (!target || archivePending) return;
+        setArchivePending(true);
+        setArchiveError(null);
+        Promise.resolve(archiveSession(target.id, { stopActivity: true }))
+          .then(() => {
+            setArchivePending(false);
+            setArchiveTarget(null);
+            if (notify) notify('archive.stopped', {});
+          })
+          .catch((error) => {
+            setArchivePending(false);
+            setArchiveError((error && error.message) || 'error');
+          });
       };
       const searchRef = React.useRef(null);
       const listRef = React.useRef(null);
@@ -2883,10 +2981,17 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           ? h(ConfirmDialog, {
               key: 'archiveConfirm',
               t,
-              title: t('confirm.archive.title'),
-              body: t('confirm.archive.body', { name: archiveTarget.title || archiveTarget.id }),
-              confirmLabel: t('confirm.archive.ok'),
-              onCancel: () => setArchiveTarget(null),
+              title: t('archive.confirm.title'),
+              body: t('archive.confirm.desc', { title: archiveTarget.title || archiveTarget.id }),
+              activity: archiveTarget.activity,
+              confirmLabel: t('archive.confirm.action'),
+              pending: archivePending,
+              error: archiveError,
+              onCancel: () => {
+                if (archivePending) return;
+                setArchiveTarget(null);
+                setArchiveError(null);
+              },
               onConfirm: confirmArchive,
             })
           : null,
@@ -3407,7 +3512,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         try {
           await ctx.uiWorkspace.archiveSession(sessionId, options);
         } catch (error) {
-          reporter('error.archiveFailed')(error);
+          // A busy session is a question ("stop its work?"), not a failure to report.
+          if (archiveActivity(error) === undefined) reporter('error.archiveFailed')(error);
           throw error;
         }
         let after = archivedIds();
@@ -3426,7 +3532,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           const error = new Error('archive did not take effect');
           error.code = 'archive/noop';
           console.error('recent-sessions: archive did not take effect', sessionId);
-          notices.push('error.archive', {});
           throw error;
         }
         return after;

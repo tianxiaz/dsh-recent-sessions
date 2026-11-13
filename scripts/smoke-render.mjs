@@ -115,6 +115,7 @@ const nodesOf = (tree, predicate) => {
 const textOf = (node) => {
   if (node === null || node === undefined) return '';
   if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join('');
   if (typeof node !== 'object') return '';
   return (node.children || []).map(textOf).join('');
 };
@@ -364,10 +365,10 @@ if (actionInline !== undefined) {
   }
   const archivedIds = actionCalls.map(([id]) => id);
   check(archivedIds.includes('s1'), 'archiving an idle session never reached the host');
-  check(!archivedIds.includes('s2'), 'a running session was archived without asking first');
+  check(archivedIds.includes('s2'), 'a running session never asked the host — the refusal drives the question');
   check(
     actionCalls.every(([, options]) => options && options.stopActivity !== true),
-    'an idle archive asked the host to stop work',
+    'a first archive attempt asked the host to stop work',
   );
 }
 
@@ -393,13 +394,24 @@ if (menuWithNotify !== undefined) {
 // The archive confirm renders the session it is about.
 const confirm = components.ConfirmDialog
   ? render('ConfirmDialog', () =>
-      components.ConfirmDialog({ t, title: 'confirm.archive.title', body: 'confirm.archive.body', confirmLabel: 'confirm.archive.ok', onCancel: () => {}, onConfirm: () => {} }),
+      components.ConfirmDialog({
+        t,
+        title: 'archive.confirm.title',
+        body: 'archive.confirm.desc',
+        activity: [{ kind: 'schedule', items: [{ id: 'sched-1', label: '每日晨间回顾' }] }],
+        confirmLabel: 'archive.confirm.action',
+        onCancel: () => {},
+        onConfirm: () => {},
+      }),
     )
   : undefined;
 if (confirm !== undefined) {
   const buttons = nodesOf(confirm, (n) => n.type === 'button').map(textOf);
-  check(buttons.includes('confirm.archive.ok'), 'archive confirm lost its confirm button');
+  check(buttons.includes('archive.confirm.action'), 'archive confirm lost its confirm button');
   check(buttons.includes('rename.cancel'), 'archive confirm lost its cancel button');
+  const list = nodesOf(confirm, (n) => n.type === 'ul')[0];
+  check(!!list, 'archive confirm does not list the work that will be stopped');
+  check(textOf(list).includes('archive.confirm.schedules.one'), 'archive confirm does not name the scheduled reminder');
 }
 
 // ---------------------------------------------------------------------------
@@ -488,14 +500,52 @@ if (noticeSource) {
     if (current) noticeKeys.push(current.key);
   });
 
-  // The host "succeeds" without archiving: this must surface, not disappear.
   const realError = console.error;
   console.error = () => {};
+
+  // The host "succeeds" without archiving: still a failure, but the caller turns
+  // it into the stop-and-archive question, so the action layer stays quiet.
+  const beforeNoop = noticeKeys.length;
   await sidebarProps.archiveSession('s1', {}).then(
     () => failures.push('a host that did not archive was reported as success'),
     (error) => check(error.code === 'archive/noop', `unexpected refusal code: ${error && error.code}`),
   );
-  check(noticeKeys.includes('error.archive'), 'a refused archive left no notice on screen');
+  check(noticeKeys.length === beforeNoop, 'a no-op archive toasted instead of asking');
+
+  // A busy session arrives as WorkspaceArchiveError with the activity list, and
+  // must not be toasted either — the dialog names the work that will stop.
+  const busy = Object.assign(new Error('workspace session archive failed: workspace/session-active: busy'), {
+    name: 'WorkspaceArchiveError',
+    rpcError: {
+      code: 'workspace/session-active',
+      message: 'the session is active (schedule)',
+      details: { activity: [{ kind: 'schedule', items: [{ id: 'sched-1', label: '每日晨间回顾' }] }] },
+    },
+  });
+  fakeCtx.uiWorkspace.archiveSession = () => Promise.reject(busy);
+  const beforeBusy = noticeKeys.length;
+  await sidebarProps.archiveSession('s3', {}).then(
+    () => failures.push('a busy session was archived without asking'),
+    (error) => {
+      const activity = error && error.rpcError && error.rpcError.details && error.rpcError.details.activity;
+      check(Array.isArray(activity) && activity[0].kind === 'schedule', 'the refusal lost its activity list');
+    },
+  );
+  check(noticeKeys.length === beforeBusy, 'a busy session toasted instead of asking');
+  fakeCtx.uiWorkspace.archiveSession = (id, options) => {
+    hostCalls.push(['archiveSession', id, options]);
+    return Promise.resolve();
+  };
+
+  // Anything else is a real failure and must be shown.
+  fakeCtx.uiWorkspace.archiveSession = () => Promise.reject(new Error('carrier fault'));
+  const beforeFault = noticeKeys.length;
+  await sidebarProps.archiveSession('s4', {}).catch(() => {});
+  check(noticeKeys.length > beforeFault && noticeKeys.includes('error.archiveFailed'), 'a real archive failure stayed silent');
+  fakeCtx.uiWorkspace.archiveSession = (id, options) => {
+    hostCalls.push(['archiveSession', id, options]);
+    return Promise.resolve();
+  };
   console.error = realError;
 
   // A host that really archives resolves and stays quiet.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.7 — 2026-11-13
+
+- 修复：归档「还有工作」的会话只弹一行报错、没有下一步 —— 宿主用 `WorkspaceArchiveError` 的 `rpcError.code === 'workspace/session-active'` 拒绝，并把「到底是什么在工作」放在 `rpcError.details.activity`（`turn` / `subagent` / `job` / `schedule` 四类）。0.2.6 只按行的状态猜，猜不到 schedule 这类活动。现在按官方契约解析这个拒绝，弹出「停止并归档此会话？」：列出将被停止的工作（例如「1 条定时提醒：…」）、「停止并归档」按钮、进行中状态与失败原因，确认后走 `archiveSession(…, { stopActivity: true })`。
+- 调整：忙碌会话的拒绝不再当成错误弹红字，而是变成这个确认；真正的失败（非忙碌原因）仍然显示原因。归档成功但宿主没落地时同样转入确认。成功停止并归档后给一行「已停止并归档」。
+- 新增：`npm run smoke` 增加「宿主拒绝契约」用例：忙碌拒绝必须携带 activity 且**不弹错误行**、普通失败必须弹错误行、确认框必须列出被停止的定时提醒；把这两条改坏（把拒绝当错误弹、或确认框不列活动）都会让测试失败。
+
 ## 0.2.6 — 2026-11-13
 
 - 修复：**行内「归档」点了没反应** —— `RecentInlineGroup` 里调用了 `archiveSession(...)`，却从未从 props 绑定它，点击时抛 `ReferenceError: archiveSession is not defined`。与 0.2.3 的 `renameSession`、0.2.4 的 `SidebarShell` 是同一类「传了没解构」。现已绑定。
