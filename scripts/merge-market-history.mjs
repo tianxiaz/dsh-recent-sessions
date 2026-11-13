@@ -21,7 +21,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const args = process.argv.slice(2);
@@ -59,25 +59,29 @@ const byVersionDesc = (left, right) => {
   return 0;
 };
 
-const merged = new Map();
+const byPlugin = new Map();
+const collect = (plugin, version) => {
+  const key = `${plugin.name}@${version.version}`;
+  if (!byPlugin.has(key)) byPlugin.set(key, { name: plugin.name, version });
+};
 for (const plugin of previous.plugins || []) {
-  for (const version of plugin.versions || []) merged.set(`${plugin.name}@${version.version}`, version);
+  for (const version of plugin.versions || []) collect(plugin, version);
 }
 let added = 0;
 for (const plugin of current.plugins || []) {
   for (const version of plugin.versions || []) {
     const key = `${plugin.name}@${version.version}`;
-    if (!merged.has(key)) added += 1;
-    merged.set(key, version);
+    if (!byPlugin.has(key)) added += 1;
+    byPlugin.set(key, { name: plugin.name, version });
   }
 }
 for (const plugin of current.plugins || []) {
   const own = [];
-  for (const version of plugin.versions || []) {
-    const stored = merged.get(`${plugin.name}@${version.version}`);
-    if (stored) own.push(stored);
+  for (const entry of byPlugin.values()) {
+    if (entry.name === plugin.name) own.push(entry.version);
   }
   plugin.versions = own.sort(byVersionDesc);
+  if (!plugin.versions.length) throw new Error(`no versions collected for ${plugin.name}`);
 }
 
 const before = (previous.plugins || []).reduce((total, plugin) => total + (plugin.versions || []).length, 0);
@@ -90,10 +94,41 @@ if (after < before) {
 writeFileSync(currentPath, `${JSON.stringify(current, null, 2)}\n`, 'utf8');
 console.log(`merged: ${before} previous + ${added} new = ${after} versions (newest ${current.plugins[0].versions[0].version})`);
 
+// The validator ships with the dsh CLI, not with this plugin, so try the bare
+// specifier first and then the two layouts a global install can have:
+//   <prefix>/lib/node_modules/@deepseek-ai/dsh-plugin-market-index
+//   <prefix>/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-plugin-market-index
+const globalNodeModules = join(dirname(dirname(process.execPath)), 'lib', 'node_modules');
+const candidates = ['@deepseek-ai/dsh-plugin-market-index'];
+if (process.env.DSH_MARKET_INDEX_MODULE) candidates.push(process.env.DSH_MARKET_INDEX_MODULE);
+for (const base of [globalNodeModules, join(globalNodeModules, '@deepseek-ai', 'dsh', 'node_modules')]) {
+  candidates.push(join(base, '@deepseek-ai', 'dsh-plugin-market-index', 'lib', 'index.js'));
+}
+
+let parseMarketIndex;
+let validator;
+for (const candidate of candidates) {
+  try {
+    const module = await import(candidate.startsWith('/') ? pathToFileURL(candidate).href : candidate);
+    const fn = module.parseMarketIndex || (module.default && module.default.parseMarketIndex);
+    if (typeof fn === 'function') {
+      parseMarketIndex = fn;
+      validator = candidate;
+      break;
+    }
+  } catch (error) {
+    /* try the next candidate */
+  }
+}
+
+if (!parseMarketIndex) {
+  console.error('merge-market-history: cannot load parseMarketIndex (dsh not found); set DSH_MARKET_INDEX_MODULE to its entry file');
+  process.exit(1);
+}
+
 try {
-  const { parseMarketIndex } = await import('@deepseek-ai/dsh-plugin-market-index');
   parseMarketIndex(current, 'https://example.com/market/index.json');
-  console.log('validated with @deepseek-ai/dsh-plugin-market-index (format 1)');
+  console.log(`validated with parseMarketIndex (${validator})`);
 } catch (error) {
   console.error(`merge-market-history: validation failed — ${error instanceof Error ? error.message : error}`);
   process.exit(1);
