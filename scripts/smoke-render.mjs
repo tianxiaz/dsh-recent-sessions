@@ -85,8 +85,17 @@ const React = {
     }
   },
 };
+const clipboardCalls = [];
 factory((name) => {
   if (name === 'react') return React;
+  if (name === '@deepseek-ai/dsh-client-ui-primitives') {
+    return {
+      writeClipboard: (text) => {
+        clipboardCalls.push(text);
+        return Promise.resolve(true);
+      },
+    };
+  }
   throw new Error('unexpected require: ' + name);
 });
 
@@ -388,6 +397,7 @@ if (menuWithNotify !== undefined) {
     copyButton.props.onClick();
     await new Promise((resolve) => setTimeout(resolve, 0));
     check(copyNotices.includes('copied.id'), 'copying a session ID gave no confirmation');
+    check(clipboardCalls.includes('s1'), 'copy bypassed the shipped clipboard helper');
   }
 }
 
@@ -553,6 +563,42 @@ if (noticeSource) {
   const before = noticeKeys.length;
   await sidebarProps.archiveSession('s2', {});
   check(noticeKeys.length === before, 'a successful archive still reported a failure');
+}
+
+// Pin is the Host's pin: state reads pinnedSessionIds, toggling calls the host.
+const pinCalls = [];
+const pinnedInline = render('RecentInlineGroup(pin)', () =>
+  components.RecentInlineGroup({
+    ...inlineProps,
+    useWorkspaces: (selector) => selector({ ...workspaceSnapshot, pinnedSessionIds: ['s2'] }),
+    pinSession: (id) => {
+      pinCalls.push(['pin', id]);
+      return Promise.resolve();
+    },
+    unpinSession: (id) => {
+      pinCalls.push(['unpin', id]);
+      return Promise.resolve();
+    },
+  }),
+);
+if (pinnedInline !== undefined) {
+  const rows = nodesOf(pinnedInline, (n) => n.props && n.props['data-drs-item'] === 'row');
+  check(rows.length === 2, 'pin fixture lost its rows');
+  check(rows[0] && textOf(rows[0]).includes('Beta'), 'a pinned session does not lead its category');
+  const unpinButton = nodesOf(pinnedInline, (n) => n.props && n.props['aria-label'] === 'action.unpin')[0];
+  const pinButton = nodesOf(pinnedInline, (n) => n.props && n.props['aria-label'] === 'action.pin')[0];
+  check(!!unpinButton && !!pinButton, 'pin state does not follow pinnedSessionIds');
+  const event = eventStub();
+  if (pinButton) pinButton.props.onClick(event);
+  if (unpinButton) unpinButton.props.onClick(event);
+  check(
+    pinCalls.some(([kind, id]) => kind === 'pin' && id === 's1'),
+    'pinning a row did not reach the Host',
+  );
+  check(
+    pinCalls.some(([kind, id]) => kind === 'unpin' && id === 's2'),
+    'unpinning a row did not reach the Host',
+  );
 }
 
 // ---------------------------------------------------------------------------

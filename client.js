@@ -20,6 +20,17 @@ window.__ModuleLoader__.load({
     const React = require('react');
     const h = React.createElement;
     const { useEffect, useMemo, useState } = React;
+    /**
+     * The shipped clipboard helper (fallbacks included). Optional: a bundle that
+     * does not expose it keeps the raw API path.
+     */
+    let writeClipboard;
+    try {
+      const primitives = require('@deepseek-ai/dsh-client-ui-primitives');
+      if (primitives && typeof primitives.writeClipboard === 'function') writeClipboard = primitives.writeClipboard;
+    } catch (error) {
+      writeClipboard = undefined;
+    }
 
     /** Locale namespace owned by this plugin. */
     const NS = 'recent-sessions';
@@ -72,7 +83,6 @@ window.__ModuleLoader__.load({
       'action.unpin': '取消置顶',
       'action.moveToTop': '置顶到最前',
       'action.archive': '归档会话',
-      'action.unarchive': '取消归档',
       'action.copyId': '复制会话 ID',
       'action.more': '更多操作',
       'action.reveal': '在工作区中定位',
@@ -166,7 +176,6 @@ window.__ModuleLoader__.load({
       'action.unpin': 'Unpin',
       'action.moveToTop': 'Move to top',
       'action.archive': 'Archive',
-      'action.unarchive': 'Unarchive',
       'action.copyId': 'Copy session ID',
       'action.more': 'More actions',
       'action.reveal': 'Reveal in Workspaces',
@@ -1845,33 +1854,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       }
     }
 
-    /** Per-category pin order: the pinned ids of each group, newest first. */
-    function readCategoryPins() {
-      try {
-        const raw = window.localStorage.getItem('dsh.recent-sessions.pins.v1');
-        if (!raw) return {};
-        const parsed = JSON.parse(raw);
-        if (!parsed || typeof parsed !== 'object') return {};
-        const map = {};
-        for (const key of INLINE_CATEGORY_KEYS) {
-          const value = parsed[key];
-          if (Array.isArray(value)) map[key] = value.filter((id) => typeof id === 'string');
-        }
-        return map;
-      } catch (error) {
-        return {};
-      }
-    }
-
-    /** Remember the pinned ids of every category. */
-    function writeCategoryPins(map) {
-      try {
-        window.localStorage.setItem('dsh.recent-sessions.pins.v1', JSON.stringify(map));
-      } catch (error) {
-        /* storage may be unavailable; the in-memory state still works */
-      }
-    }
-
     /** Session ids this browser opened, with the timestamp of the last open. */
     function readViewed() {
       try {
@@ -2140,17 +2122,17 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         h('div', { key: 'sep', className: 'drs-menuSep', role: 'separator' }),
         item('archive', t('action.archive'), onArchive),
         item('copy', t('action.copyId'), () => {
-          try {
-            const write = navigator.clipboard && navigator.clipboard.writeText
-              ? navigator.clipboard.writeText(menu.id)
-              : Promise.reject(new Error('clipboard unavailable'));
-            Promise.resolve(write).then(
-              () => notify && notify('copied.id', {}),
-              () => notify && notify('error.copy', {}),
-            );
-          } catch (error) {
-            if (notify) notify('error.copy', {});
-          }
+          const fallback = () => {
+            if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+              return Promise.reject(new Error('clipboard unavailable'));
+            }
+            return navigator.clipboard.writeText(menu.id);
+          };
+          const write = writeClipboard ? writeClipboard(menu.id).then((ok) => (ok ? undefined : Promise.reject(new Error('clipboard rejected')))) : fallback();
+          Promise.resolve(write).then(
+            () => notify && notify('copied.id', {}),
+            () => notify && notify('error.copy', {}),
+          );
         }),
       );
     }
@@ -2169,6 +2151,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const { t, selectPanel, openSession, toggleFavorite, addFavorite, insertFavoriteBefore, moveFavoriteToFront, maxHeight } = props;
       const renameSession = props.renameSession;
       const archiveSession = props.archiveSession;
+      const pinSession = props.pinSession;
+      const unpinSession = props.unpinSession;
       const notify = props.notify;
       const { useSessions, useSessionStatus, useWorkspaces, useFavorites } = props;
       const ids = useSessions((state) => state.ids);
@@ -2240,17 +2224,17 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const scrollWriteAt = React.useRef(0);
       const sectionRef = React.useRef(null);
 
+      // Pinning is the Host's pin, not a private ordering: writing it here floats
+      // the session in the shipped Workspaces list too, and a pin made there shows
+      // up here. One set, one order.
       const pinnedIds = useWorkspaces((state) => state.pinnedSessionIds);
-      const [categoryPins, setCategoryPins] = useState(readCategoryPins);
-      /** Pinned ids of one category, newest pin first. */
-      const pinsOf = (key) => categoryPins[key] || [];
-      const isPinnedIn = (key, sessionId) => (categoryPins[key] || []).indexOf(sessionId) >= 0;
-      /** Pin/unpin inside one category; other categories keep their own order. */
-      const togglePin = (key, sessionId) => {
-        const already = isPinnedIn(key, sessionId);
-        // Favorites are a manual order, so pinning must edit that order and
-        // remember the row it followed; unpinning then restores the slot.
-        if (key === 'favorites') {
+      const pinnedSet = useMemo(() => new Set(pinnedIds || []), [pinnedIds]);
+      const isPinned = (sessionId) => pinnedSet.has(sessionId);
+      const togglePin = (sessionId) => {
+        const already = isPinned(sessionId);
+        // Favorites keep a manual order, so a pinned favorite also moves to the
+        // front and remembers the row it followed; unpinning restores that slot.
+        if (favoriteSet.has(sessionId)) {
           if (!already) {
             const list = favorites || [];
             const at = list.indexOf(sessionId);
@@ -2267,18 +2251,12 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             writePinAnchor(sessionId, undefined);
           }
         }
-        setCategoryPins((previous) => {
-          const current = previous[key] || [];
-          const next = current.indexOf(sessionId) >= 0
-            ? { ...previous, [key]: current.filter((value) => value !== sessionId) }
-            : { ...previous, [key]: [sessionId].concat(current) };
-          writeCategoryPins(next);
-          return next;
-        });
+        const run = already ? unpinSession : pinSession;
+        if (typeof run === 'function') run(sessionId);
       };
-      /** Pinned rows lead their own category, in pin order. */
+      /** Pinned rows lead every category, in the Host's pin order. */
       const orderedRows = (key, rows) => {
-        const pins = pinsOf(key);
+        const pins = pinnedIds || [];
         if (pins.length === 0) return rows;
         const remaining = new Map(rows.map((row) => [row.id, row]));
         const head = [];
@@ -2585,8 +2563,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 
       const renderRow = (row, options) => {
         const favorite = favoriteSet.has(row.id);
-        const pinKey = options && options.pinKey ? options.pinKey : undefined;
-        const pinned = pinKey !== undefined && isPinnedIn(pinKey, row.id);
+        const pinned = isPinned(row.id);
         const label = t(favorite ? 'action.unfavorite' : 'action.favorite');
         const selected = row.id === currentId;
         const pendingNote = row.state === 'pending'
@@ -2693,7 +2670,6 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                   title: row.title,
                   id: row.id,
                   state: row.state,
-                  pinKey,
                   top: Math.min(rect.bottom + 4, window.innerHeight - 200),
                   left: Math.max(8, Math.min(rect.left, window.innerWidth - 210)),
                 });
@@ -2729,9 +2705,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             },
             h(StarIcon, { filled: favorite, size: 12 }),
           ),
-          pinKey === undefined
-            ? null
-            : h(
+          h(
                 'button',
                 {
                   type: 'button',
@@ -2740,7 +2714,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                   title: pinned ? t('action.unpin') : t('action.pin'),
                   onClick: (event) => {
                     event.stopPropagation();
-                    togglePin(pinKey, row.id);
+                    togglePin(row.id);
                   },
                 },
                 pinned ? h(PinIcon, { size: 13 }) : h(PinOutlineIcon, { size: 13 }),
@@ -2814,7 +2788,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             ? null
             : category.rows.length === 0
               ? h('div', { className: 'drs-inlineEmpty' }, t(dropZone !== null ? 'inline.drop' : 'inline.favEmpty'))
-              : visible.map((row) => renderRow(row, { pinKey: category.key })),
+              : visible.map((row) => renderRow(row)),
           folded || hidden === 0
             ? null
             : h(
@@ -2961,12 +2935,12 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               t,
               menu: rowMenu,
               favorite: favoriteSet.has(rowMenu.id),
-              pinned: rowMenu.pinKey !== undefined && isPinnedIn(rowMenu.pinKey, rowMenu.id),
+              pinned: isPinned(rowMenu.id),
               onClose: () => setRowMenu(null),
               onFavorite: () => toggleFavorite(rowMenu.id),
               onMoveToTop: () => moveFavoriteToFront(rowMenu.id),
-              onPin: () => togglePin(rowMenu.pinKey, rowMenu.id),
-              onUnpin: () => togglePin(rowMenu.pinKey, rowMenu.id),
+              onPin: () => togglePin(rowMenu.id),
+              onUnpin: () => togglePin(rowMenu.id),
               onArchive: () => requestArchive({ id: rowMenu.id, title: rowMenu.title, state: rowMenu.state }),
               notify,
               onRename: () => {
