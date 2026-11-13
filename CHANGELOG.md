@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.6 — 2026-11-13
+
+- 修复：**行内「归档」点了没反应** —— `RecentInlineGroup` 里调用了 `archiveSession(...)`，却从未从 props 绑定它，点击时抛 `ReferenceError: archiveSession is not defined`。与 0.2.3 的 `renameSession`、0.2.4 的 `SidebarShell` 是同一类「传了没解构」。现已绑定。
+- 修复：**所有会话动作的失败不再静默** —— 宿主的 `workspaces.*` / `sessions.using` 用返回值 `{ok:false,error}` 回报拒绝，而不是抛异常；原来的动作层只兜异常，所以归档被拒、置顶失败、复制失败全都只进 Console。现在动作层同时读返回值，失败会在侧栏/面板底部显示一行中文原因，6 秒后自动消失。
+- 新增：归档**还有未完成工作的会话**时先弹确认（走官方同一条 `archiveSession(…, { stopActivity: true })`），确认后停止并归档；被宿主以别的理由拒绝时也说明原因，不再假装成功——归档后会回读宿主的归档集合来核实，没落地就报错。
+- 新增：`npm run smoke` 现在会**按下每个按钮**（外壳 / 行 / 菜单 / 重命名与归档两个弹窗 / 面板页，含拖拽、滚动、键盘处理器），并直接驱动真实动作层：宿主"假成功"必须被识别为失败、复制必须给确认、注入列表必须包含 `sessions`。对 0.2.5 的 `client.js` 实测输出 8 条失败，其中 `archiveSession is not defined` 正是本次报障。
+
 ## 0.2.5 — 2026-11-13
 
 - 修复：**重命名对话框点「确定」没反应** —— 插件没有声明 `sessions` 服务（官方 `ui-workspace` 的 `inject` 里有 `sessions`），`renameSession` 走到 `ctx.sessions` 判空就 return，错误只进 Console、界面毫无反馈。现在 `inject` 补上 `sessions`，并按官方写法用 `ctx.get("sessions")` 取控制器。

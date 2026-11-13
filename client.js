@@ -84,6 +84,18 @@ window.__ModuleLoader__.load({
       'rename.saving': '保存中…',
       'rename.failed': '重命名失败：{message}',
       'rename.noController': '会话控制器不可用，无法重命名。',
+      'error.open': '打开会话失败：{message}',
+      'error.pin': '置顶失败：{message}',
+      'error.unpin': '取消置顶失败：{message}',
+      'error.archiveFailed': '归档失败：{message}',
+      'error.archive': '归档没有生效：该会话可能还有未完成的工作，先停止再归档。',
+      'error.copy': '复制失败，请重试',
+      'copied.id': '已复制会话 ID',
+      'error.locate': '在工作区里找不到「{name}」',
+      'error.newSession': '新建会话失败：{message}',
+      'confirm.archive.title': '归档还有工作的会话',
+      'confirm.archive.body': '「{name}」还有未完成的工作。归档会停止这些工作，并把它从列表移出。',
+      'confirm.archive.ok': '归档',
       'action.favorite': '收藏会话',
       'action.unfavorite': '取消收藏',
       'action.open': '打开会话',
@@ -154,6 +166,18 @@ window.__ModuleLoader__.load({
       'rename.saving': 'Saving…',
       'rename.failed': 'Rename failed: {message}',
       'rename.noController': 'The session controller is unavailable, so this session cannot be renamed.',
+      'error.open': 'Could not open the session: {message}',
+      'error.pin': 'Could not pin the session: {message}',
+      'error.unpin': 'Could not unpin the session: {message}',
+      'error.archiveFailed': 'Could not archive the session: {message}',
+      'error.archive': 'The archive did not take effect — this session still has work; stop it first.',
+      'error.copy': 'Could not copy — try again',
+      'copied.id': 'Session ID copied',
+      'error.locate': 'Could not find "{name}" in Workspaces',
+      'error.newSession': 'Could not start a new session: {message}',
+      'confirm.archive.title': 'Archive a session with running work',
+      'confirm.archive.body': '"{name}" still has unfinished work. Archiving stops it and removes the session from the list.',
+      'confirm.archive.ok': 'Archive',
       'action.favorite': 'Favorite session',
       'action.unfavorite': 'Remove from favorites',
       'action.open': 'Open session',
@@ -598,7 +622,7 @@ window.__ModuleLoader__.load({
 
     // #region page styles
     const PAGE_CSS = `
-.drs-page{flex:1 1 auto;width:100%;height:100%;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px;line-height:1.4}
+.drs-page{position:relative;flex:1 1 auto;width:100%;height:100%;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px;line-height:1.4}
 .drs-page *{box-sizing:border-box}
 .drs-head{flex:none;padding:20px 28px 8px}
 .drs-headRow{display:flex;gap:12px;align-items:flex-start;max-width:860px;margin:0 auto}
@@ -660,7 +684,8 @@ window.__ModuleLoader__.load({
      * need the user's attention, then plausible quick-access rows.
      */
     function RecentSessionsPage(props) {
-      const { t, useSessions, useSessionStatus, useWorkspaces, useFavorites } = props;
+      const { t, useSessions, useSessionStatus, useWorkspaces, useFavorites, useNotices } = props;
+      const notice = useNotices((snapshot) => snapshot);
       const { toggleFavorite, addFavorite, insertFavoriteBefore, moveFavoriteToFront, openSession } = props;
 
       const ids = useSessions((state) => state.ids);
@@ -1008,6 +1033,7 @@ window.__ModuleLoader__.load({
           ),
         ),
         h('div', { className: 'drs-body' }, h('div', { className: 'drs-inner' }, body)),
+        h(NoticeLine, { key: 'notice', t, notice }),
       );
     }
     // #endregion
@@ -1165,6 +1191,64 @@ window.__ModuleLoader__.load({
           }
         },
       };
+    }
+
+    /**
+     * Transient action feedback: one line, auto-dismissed, owned by the surface that
+     * triggered it. Host calls reject through returned result objects about as often
+     * as through exceptions, so every action has to end somewhere the user can see.
+     */
+    function createNoticeSource() {
+      let snapshot = null;
+      const listeners = new Set();
+      let timer;
+      let seq = 0;
+      const publish = () => {
+        for (const listener of [...listeners]) {
+          try {
+            listener();
+          } catch (error) {
+            console.error('recent-sessions: notice listener failed', error);
+          }
+        }
+      };
+      return {
+        source: {
+          getSnapshot: () => snapshot,
+          subscribe: (listener) => {
+            listeners.add(listener);
+            return () => listeners.delete(listener);
+          },
+        },
+        /** @param key - locale key; @param params - interpolation values; @param ttl - ms on screen. */
+        push(key, params, ttl = 6000) {
+          seq += 1;
+          snapshot = { id: seq, key, params };
+          publish();
+          window.clearTimeout(timer);
+          timer = window.setTimeout(() => {
+            snapshot = null;
+            publish();
+          }, ttl);
+        },
+        clear() {
+          window.clearTimeout(timer);
+          if (snapshot !== null) {
+            snapshot = null;
+            publish();
+          }
+        },
+        dispose() {
+          window.clearTimeout(timer);
+          listeners.clear();
+        },
+      };
+    }
+
+    /** The one-line feedback strip; renders nothing while there is no notice. */
+    function NoticeLine({ t, notice }) {
+      if (!notice) return null;
+      return h('div', { className: 'drs-notice', role: 'status', 'aria-live': 'polite' }, t(notice.key, notice.params));
     }
 
     /** Whether the panel list's More menu has registered rows. */
@@ -1581,6 +1665,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-menu{position:fixed;z-index:1000;min-width:184px;padding:4px;border-radius:10px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);box-shadow:0 10px 28px rgba(0,0,0,.28)}
 .drs-modalScrim{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:rgba(10,14,20,.32)}
 .drs-modal{width:min(420px,100%);display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:14px;background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l3);box-shadow:0 18px 48px rgba(0,0,0,.22)}
+.drs-modalBody{font-size:12.5px;line-height:19px;color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere}
 .drs-modalTitle{font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)}
 .drs-modalInput{height:34px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l4);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;outline:none}
 .drs-modalInput:focus-visible{border-color:var(--dsw-alias-brand-primary)}
@@ -1593,6 +1678,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-modalBtn:disabled:hover{background:none}
 .drs-modalBtn--primary:disabled:hover{filter:none}
 .drs-modalError{font-size:12px;line-height:18px;color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere}
+.drs-shell{position:relative}
+.drs-notice{position:absolute;left:12px;right:12px;bottom:42px;z-index:30;padding:7px 10px;border-radius:8px;border:.5px solid var(--dsw-alias-border-l3);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:12px;line-height:17px;overflow-wrap:anywhere}
 .drs-menuItem{display:flex;align-items:center;width:100%;height:30px;padding:0 10px;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;line-height:18px;text-align:left;cursor:pointer}
 .drs-menuItem:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-menuSep{height:1px;margin:4px 6px;background:var(--dsw-alias-border-l1)}
@@ -1896,9 +1983,35 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       );
     }
 
+    /** Destructive confirm: same shell as the rename dialog, one question. */
+    function ConfirmDialog(props) {
+      const { t, title, body, confirmLabel, onCancel, onConfirm } = props;
+      return h(
+        'div',
+        {
+          className: 'drs-modalScrim',
+          onPointerDown: (event) => {
+            if (event.target === event.currentTarget) onCancel();
+          },
+        },
+        h(
+          'div',
+          { className: 'drs-modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
+          h('div', { className: 'drs-modalTitle' }, title),
+          h('div', { className: 'drs-modalBody' }, body),
+          h(
+            'div',
+            { className: 'drs-modalActions' },
+            h('button', { type: 'button', className: 'drs-modalBtn', onClick: onCancel }, t('rename.cancel')),
+            h('button', { type: 'button', className: 'drs-modalBtn drs-modalBtn--primary', onClick: onConfirm }, confirmLabel),
+          ),
+        ),
+      );
+    }
+
     /** One row's "..." menu: the actions the shipped strip offers, plus this plugin's. */
     function RowMenu(props) {
-      const { t, menu, favorite, pinned, onClose, onFavorite, onMoveToTop, onPin, onUnpin, onArchive, onRename } = props;
+      const { t, menu, favorite, pinned, onClose, onFavorite, onMoveToTop, onPin, onUnpin, onArchive, onRename, notify } = props;
       const ref = React.useRef(null);
       useEffect(() => {
         const onPointerDown = (event) => {
@@ -1946,9 +2059,15 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         item('archive', t('action.archive'), onArchive),
         item('copy', t('action.copyId'), () => {
           try {
-            void navigator.clipboard.writeText(menu.id);
+            const write = navigator.clipboard && navigator.clipboard.writeText
+              ? navigator.clipboard.writeText(menu.id)
+              : Promise.reject(new Error('clipboard unavailable'));
+            Promise.resolve(write).then(
+              () => notify && notify('copied.id', {}),
+              () => notify && notify('error.copy', {}),
+            );
           } catch (error) {
-            /* clipboard permission denied; nothing to do */
+            if (notify) notify('error.copy', {});
           }
         }),
       );
@@ -1967,6 +2086,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
     function RecentInlineGroup(props) {
       const { t, selectPanel, openSession, toggleFavorite, addFavorite, insertFavoriteBefore, moveFavoriteToFront, maxHeight } = props;
       const renameSession = props.renameSession;
+      const archiveSession = props.archiveSession;
+      const notify = props.notify;
       const { useSessions, useSessionStatus, useWorkspaces, useFavorites } = props;
       const ids = useSessions((state) => state.ids);
       const byId = useSessions((state) => state.byId);
@@ -1991,6 +2112,30 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [renameValue, setRenameValue] = useState('');
       const [renamePending, setRenamePending] = useState(false);
       const [renameError, setRenameError] = useState(null);
+      const [archiveTarget, setArchiveTarget] = useState(null);
+      /**
+       * Archive one row. The host refuses sessions with running work unless it is
+       * asked to stop them, so a refusal opens the confirm instead of doing nothing.
+       */
+      const requestArchive = (row) => {
+        if (row.state === 'running' || row.state === 'pending') {
+          setArchiveTarget(row);
+          return;
+        }
+        Promise.resolve(archiveSession(row.id, {})).catch((error) => {
+          if (error && (error.code === 'workspace/session-active' || error.code === 'archive/noop')) {
+            setArchiveTarget(row);
+          }
+        });
+      };
+      const confirmArchive = () => {
+        const target = archiveTarget;
+        if (!target) return;
+        setArchiveTarget(null);
+        Promise.resolve(archiveSession(target.id, { stopActivity: true })).catch(() => {
+          /* the action layer already surfaced the reason */
+        });
+      };
       const searchRef = React.useRef(null);
       const listRef = React.useRef(null);
       const savedScroll = React.useRef(readInlineScroll());
@@ -2310,11 +2455,15 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const revealWorkspace = (label) => {
         if (!label) return;
         const root = document.querySelector('.drs-browserSlot');
-        if (!root) return;
-        const target = Array.from(root.querySelectorAll('[aria-expanded]')).find(
-          (element) => (element.textContent || '').indexOf(label) >= 0,
-        );
-        if (!target) return;
+        const target = root
+          ? Array.from(root.querySelectorAll('[aria-expanded]')).find(
+              (element) => (element.textContent || '').indexOf(label) >= 0,
+            )
+          : undefined;
+        if (!target) {
+          if (notify) notify('error.locate', { name: label });
+          return;
+        }
         if (target.getAttribute('aria-expanded') === 'false') {
           try {
             target.click();
@@ -2445,6 +2594,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 setRowMenu({
                   title: row.title,
                   id: row.id,
+                  state: row.state,
                   pinKey,
                   top: Math.min(rect.bottom + 4, window.innerHeight - 200),
                   left: Math.max(8, Math.min(rect.left, window.innerWidth - 210)),
@@ -2462,7 +2612,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               title: t('action.archive'),
               onClick: (event) => {
                 event.stopPropagation();
-                archiveSession(row.id);
+                requestArchive(row);
               },
             },
             h(ArchiveIcon, { size: 14 }),
@@ -2719,13 +2869,25 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               onMoveToTop: () => moveFavoriteToFront(rowMenu.id),
               onPin: () => togglePin(rowMenu.pinKey, rowMenu.id),
               onUnpin: () => togglePin(rowMenu.pinKey, rowMenu.id),
-              onArchive: () => archiveSession(rowMenu.id),
+              onArchive: () => requestArchive({ id: rowMenu.id, title: rowMenu.title, state: rowMenu.state }),
+              notify,
               onRename: () => {
                 setRenameError(null);
                 setRenamePending(false);
                 setRenameTarget({ id: rowMenu.id, title: rowMenu.title || '' });
                 setRenameValue(rowMenu.title || '');
               },
+            })
+          : null,
+        archiveTarget
+          ? h(ConfirmDialog, {
+              key: 'archiveConfirm',
+              t,
+              title: t('confirm.archive.title'),
+              body: t('confirm.archive.body', { name: archiveTarget.title || archiveTarget.id }),
+              confirmLabel: t('confirm.archive.ok'),
+              onCancel: () => setArchiveTarget(null),
+              onConfirm: confirmArchive,
             })
           : null,
         renameTarget
@@ -2895,6 +3057,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         unpinSession,
         archiveSession,
         renameSession,
+        notify,
         usePanels,
         useEntryPins,
         useEntryActions,
@@ -2903,10 +3066,12 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         useSessionStatus,
         useWorkspaces,
         useFavorites,
+        useNotices,
         t,
         renderSlot,
       } = props;
 
+      const notice = useNotices((snapshot) => snapshot);
       const regionRef = React.useRef(null);
       const [sectionMax, setSectionMax] = useState(undefined);
       const panels = usePanels((snapshot) => snapshot);
@@ -3099,6 +3264,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                   unpinSession,
                   archiveSession,
                   renameSession,
+                  notify,
                   maxHeight: sectionMax,
                   useSessions,
                   useSessionStatus,
@@ -3124,6 +3290,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           h('div', { className: 'drs-footerActions' }, renderSlot('sidebar.footer.action', { wide })),
           h('div', { className: 'drs-settingsArea' }, renderSlot('sidebar.settings', { wide })),
         ),
+        h(NoticeLine, { key: 'notice', t, notice }),
       );
     }
 
@@ -3181,27 +3348,89 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       ctx.effect(() => () => panels.dispose(), 'recent-sessions: panel list');
       const entryActions = createEntryActionsSource(ctx);
 
+      const notices = createNoticeSource();
+      ctx.effect(() => () => notices.dispose(), 'recent-sessions: notices');
+      const notify = (key, params) => notices.push(key, params);
+
+      /** Host calls answer a value or `{ ok: false, error }`; both have to land. */
+      const unwrap = (value) => {
+        if (value && typeof value === 'object' && value.ok === false) {
+          const error = new Error((value.error && value.error.message) || 'rejected');
+          if (value.error && value.error.code) error.code = value.error.code;
+          throw error;
+        }
+        return value;
+      };
+      const reporter = (key) => (error) => {
+        console.error('recent-sessions: ' + key, error);
+        notices.push(key, { message: (error && error.message) || 'error' });
+      };
+
       const openSession = (sessionId) => {
         try {
-          ctx.uiWorkspace.openSession(sessionId);
+          return Promise.resolve(ctx.uiWorkspace.openSession(sessionId)).catch(reporter('error.open'));
         } catch (error) {
-          console.error('recent-sessions: open session failed', error);
+          reporter('error.open')(error);
+          return Promise.resolve();
         }
       };
-      /** Run one host session action; failures land in the console, never in the UI. */
-      const runSessionAction = (label, run) => {
+      const pinSession = (sessionId) => {
         try {
-          const result = run();
-          if (result && typeof result.catch === 'function') {
-            result.catch((error) => console.error('recent-sessions: ' + label + ' failed', error));
-          }
+          return Promise.resolve(ctx.uiWorkspace.pinSession(sessionId)).then(unwrap).catch(reporter('error.pin'));
         } catch (error) {
-          console.error('recent-sessions: ' + label + ' failed', error);
+          reporter('error.pin')(error);
+          return Promise.resolve();
         }
       };
-      const pinSession = (sessionId) => runSessionAction('pin', () => ctx.uiWorkspace.pinSession(sessionId));
-      const unpinSession = (sessionId) => runSessionAction('unpin', () => ctx.uiWorkspace.unpinSession(sessionId));
-      const archiveSession = (sessionId) => runSessionAction('archive', () => ctx.uiWorkspace.archiveSession(sessionId));
+      const unpinSession = (sessionId) => {
+        try {
+          return Promise.resolve(ctx.uiWorkspace.unpinSession(sessionId)).then(unwrap).catch(reporter('error.unpin'));
+        } catch (error) {
+          reporter('error.unpin')(error);
+          return Promise.resolve();
+        }
+      };
+      /** The host's archive set, read from the controller that owns it. */
+      const archivedIds = () => {
+        const workspaces = typeof ctx.get === 'function' ? ctx.get('workspaces') : undefined;
+        const state = workspaces && workspaces.list ? workspaces.list.getSnapshot() : undefined;
+        return state && Array.isArray(state.archivedSessionIds) ? state.archivedSessionIds : undefined;
+      };
+      /**
+       * Archive through the shipped service, so its own policy runs (it also clears
+       * the main column when needed). The service answers void, so verify against
+       * the archive set afterwards: a `workspace/session-active` refusal would
+       * otherwise be indistinguishable from success.
+       */
+      const archiveSession = async (sessionId, options = {}) => {
+        const before = archivedIds();
+        try {
+          await ctx.uiWorkspace.archiveSession(sessionId, options);
+        } catch (error) {
+          reporter('error.archiveFailed')(error);
+          throw error;
+        }
+        let after = archivedIds();
+        // The durable set is installed inside the service before it resolves, but a
+        // queue hop is cheap insurance against a false "did nothing" report.
+        if (Array.isArray(before) && Array.isArray(after) && !before.includes(sessionId) && !after.includes(sessionId)) {
+          await new Promise((resolve) => window.setTimeout(resolve, 80));
+          after = archivedIds();
+        }
+        if (
+          Array.isArray(before) &&
+          Array.isArray(after) &&
+          !before.includes(sessionId) &&
+          !after.includes(sessionId)
+        ) {
+          const error = new Error('archive did not take effect');
+          error.code = 'archive/noop';
+          console.error('recent-sessions: archive did not take effect', sessionId);
+          notices.push('error.archive', {});
+          throw error;
+        }
+        return after;
+      };
       /**
        * Rename through the session controller, the same path the shipped row uses.
        * Returns the promise so the dialog can keep itself open when the host rejects
@@ -3230,9 +3459,10 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       };
       const startSession = (workspaceId, options) => {
         try {
-          ctx.uiWorkspace.startSession(workspaceId, options);
+          const result = ctx.uiWorkspace.startSession(workspaceId, options);
+          if (result && typeof result.catch === 'function') result.catch(reporter('error.newSession'));
         } catch (error) {
-          console.error('recent-sessions: new session failed', error);
+          reporter('error.newSession')(error);
         }
       };
       const toggleSidebar = () => {
@@ -3249,7 +3479,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             key: PANEL_ID,
             locale: NS,
             inject: () => ({
-              hooks: { favorites: favorites.source },
+              hooks: { notices: notices.source, favorites: favorites.source },
               toggleFavorite: favorites.toggle,
               addFavorite: favorites.add,
               insertFavoriteBefore: favorites.insertBefore,
@@ -3306,7 +3536,9 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               unpinSession,
               archiveSession,
               renameSession,
+              notify,
               hooks: {
+                notices: notices.source,
                 panels: panels.source,
                 entryPins: pins.unpinned,
                 entryActions,

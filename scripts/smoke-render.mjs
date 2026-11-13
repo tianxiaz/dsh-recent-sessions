@@ -40,8 +40,11 @@ const fakeWindow = {
   removeEventListener: () => {},
   setInterval: () => 0,
   clearInterval: () => {},
-  setTimeout: () => 0,
-  clearTimeout: () => {},
+  // Real timers, pinned to 0 ms: the action layer awaits one before it decides an
+  // archive did not land. Notice auto-dismiss timers are why the run ends with an
+  // explicit exit instead of waiting for the loop to drain.
+  setTimeout: (fn) => setTimeout(fn, 0),
+  clearTimeout: (timer) => clearTimeout(timer),
   location: { reload: () => {} },
   matchMedia: () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} }),
 };
@@ -61,7 +64,11 @@ fakeWindow.__ModuleLoader__ = { load: ({ factory: load }) => { factory = load; }
 // Expose the components under test by widening the module's return statement.
 const patched = source.replace(
   '    return { inject, apply };',
-  '    window.__smoke = { SidebarShell, RecentInlineGroup, RowMenu, RenameDialog, RecentSessionsPage, SidebarFallback };\n    return { inject, apply };',
+  `    window.__smoke = { SidebarShell, RecentInlineGroup, RowMenu, RenameDialog, RecentSessionsPage, SidebarFallback, inject, apply };
+    // Older bundles do not export every component; typeof keeps this harness usable
+    // against them too, which is how the historical failure gets reproduced.
+    window.__smoke.ConfirmDialog = typeof ConfirmDialog === 'function' ? ConfirmDialog : undefined;
+    return { inject, apply };`,
 );
 new Function('window', 'document', patched)(fakeWindow, fakeDocument);
 
@@ -111,6 +118,60 @@ const textOf = (node) => {
   if (typeof node !== 'object') return '';
   return (node.children || []).map(textOf).join('');
 };
+// Every interactive prop we know how to drive, with an event stub that answers
+// the questions a handler may ask (key, target/currentTarget, rect, preventDefault).
+const eventStub = () => {
+  const node = {
+    getAttribute: () => 'false',
+    getBoundingClientRect: () => ({ top: 10, bottom: 30, left: 10, right: 60, width: 50, height: 20 }),
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    contains: () => false,
+    click: () => {},
+    scrollIntoView: () => {},
+    style: {},
+    textContent: '',
+    value: 'Alpha',
+    dataset: {},
+  };
+  return {
+    key: 'Enter',
+    shiftKey: false,
+    metaKey: false,
+    ctrlKey: false,
+    altKey: false,
+    target: node,
+    currentTarget: node,
+    dataTransfer: { dropEffect: '', types: [], getData: () => 's1', setData: () => {} },
+    preventDefault: () => {},
+    stopPropagation: () => {},
+  };
+};
+
+/**
+ * Press every button in a rendered tree. A handler that references a prop the
+ * component never bound throws here instead of in the browser — that is exactly
+ * how "archive" and "rename" died in 0.2.3–0.2.5.
+ */
+const pressEveryButton = (tree, label) => {
+  let pressed = 0;
+  walk(tree, (node) => {
+    if (!node.props) return;
+    for (const prop of ['onClick', 'onChange', 'onKeyDown', 'onPointerDown', 'onScroll', 'onDragOver', 'onDragLeave', 'onDrop', 'onDragStart', 'onMouseEnter', 'onFocus']) {
+      const handler = node.props[prop];
+      if (typeof handler !== 'function') continue;
+      pressed += 1;
+      try {
+        const result = handler(eventStub());
+        if (result && typeof result.catch === 'function') result.catch(() => {});
+      } catch (error) {
+        failures.push(`${label}: ${prop} handler threw — ${error && error.message}`);
+      }
+    }
+  });
+  return pressed;
+};
+
 const render = (label, run) => {
   try {
     return run();
@@ -135,6 +196,7 @@ const workspaceSnapshot = {
   pinnedSessionIds: [],
 };
 const hooks = {
+  useNotices: (selector) => selector(null),
   useSessions: (selector) => selector(sessionSnapshot),
   useSessionStatus: (selector) => selector(new Map()),
   useWorkspaces: (selector) => selector(workspaceSnapshot),
@@ -160,8 +222,9 @@ const shellProps = {
   openSession: () => {},
   pinSession: () => {},
   unpinSession: () => {},
-  archiveSession: () => {},
-  renameSession: () => {},
+  archiveSession: () => Promise.resolve(),
+  renameSession: () => Promise.resolve(),
+  notify: () => {},
   usePanels: (selector) => selector([]),
   useEntryPins: (selector) => selector([]),
   useEntryActions: (selector) => selector(false),
@@ -193,8 +256,9 @@ const inlineProps = {
   moveFavoriteToFront: () => {},
   pinSession: () => {},
   unpinSession: () => {},
-  archiveSession: () => {},
-  renameSession: () => {},
+  archiveSession: () => Promise.resolve(),
+  renameSession: () => Promise.resolve(),
+  notify: () => {},
   maxHeight: 300,
   ...hooks,
 };
@@ -221,6 +285,7 @@ const menuProps = {
   onUnpin: () => {},
   onArchive: () => {},
   onRename: () => {},
+  notify: () => {},
 };
 const menu = render('RowMenu', () => components.RowMenu(menuProps));
 if (menu !== undefined) {
@@ -271,10 +336,202 @@ if (dialogError !== undefined) {
 }
 
 // ---------------------------------------------------------------------------
+// 4c. Session actions — every row button must reach a real host call, and an
+//     action that the host refuses must not stay silent.
+// ---------------------------------------------------------------------------
+const actionCalls = [];
+const actionInline = render('RecentInlineGroup(actions)', () =>
+  components.RecentInlineGroup({
+    ...inlineProps,
+    archiveSession: (id, options) => {
+      actionCalls.push([id, options]);
+      return Promise.resolve();
+    },
+    // one running session so the confirm path can be observed
+    useSessionStatus: (selector) => selector(new Map([['s2', { running: true }]])),
+  }),
+);
+if (actionInline !== undefined) {
+  const archiveButtons = nodesOf(actionInline, (n) => n.props && n.props['aria-label'] === 'action.archive');
+  check(archiveButtons.length >= 2, 'session rows lost their archive button');
+  const event = eventStub();
+  for (const button of archiveButtons) {
+    try {
+      button.props.onClick(event);
+    } catch (error) {
+      failures.push(`archiving from a row threw — ${error && error.message}`);
+    }
+  }
+  const archivedIds = actionCalls.map(([id]) => id);
+  check(archivedIds.includes('s1'), 'archiving an idle session never reached the host');
+  check(!archivedIds.includes('s2'), 'a running session was archived without asking first');
+  check(
+    actionCalls.every(([, options]) => options && options.stopActivity !== true),
+    'an idle archive asked the host to stop work',
+  );
+}
+
+// Copy shows a confirmation; clipboard failure shows a retry line instead.
+const copyNotices = [];
+const menuWithNotify = render('RowMenu(notify)', () =>
+  components.RowMenu({ ...menuProps, notify: (key) => copyNotices.push(key) }),
+);
+if (menuWithNotify !== undefined) {
+  const copyButton = nodesOf(menuWithNotify, (n) => n.props && n.props.role === 'menuitem' && textOf(n) === 'action.copyId')[0];
+  check(!!copyButton, 'row menu lost its copy entry');
+  if (copyButton) {
+    Object.defineProperty(globalThis, 'navigator', {
+      value: { clipboard: { writeText: () => Promise.resolve() } },
+      configurable: true,
+    });
+    copyButton.props.onClick();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    check(copyNotices.includes('copied.id'), 'copying a session ID gave no confirmation');
+  }
+}
+
+// The archive confirm renders the session it is about.
+const confirm = components.ConfirmDialog
+  ? render('ConfirmDialog', () =>
+      components.ConfirmDialog({ t, title: 'confirm.archive.title', body: 'confirm.archive.body', confirmLabel: 'confirm.archive.ok', onCancel: () => {}, onConfirm: () => {} }),
+    )
+  : undefined;
+if (confirm !== undefined) {
+  const buttons = nodesOf(confirm, (n) => n.type === 'button').map(textOf);
+  check(buttons.includes('confirm.archive.ok'), 'archive confirm lost its confirm button');
+  check(buttons.includes('rename.cancel'), 'archive confirm lost its cancel button');
+}
+
+// ---------------------------------------------------------------------------
+// 4d. Plugin wiring — every ctx service the code reads must be injected, and
+//     the session controller must be among them (0.2.3 shipped without it).
+// ---------------------------------------------------------------------------
+const injectMatch = source.match(/const inject = \[([^\]]*)\]/);
+check(!!injectMatch, 'plugin no longer declares a client inject list');
+if (injectMatch) {
+  const declared = injectMatch[1].split(',').map((name) => name.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+  for (const required of ['slots', 'layout', 'uiWorkspace', 'locale', 'sessions']) {
+    check(declared.includes(required), `client inject list is missing "${required}"`);
+  }
+  const accessed = [...new Set([...source.matchAll(/ctx\.([a-zA-Z][a-zA-Z0-9]*)\b/g)].map((m) => m[1]))];
+  const allowed = new Set([...declared, 'get', 'effect']);
+  const unDeclared = accessed.filter((name) => !allowed.has(name));
+  check(unDeclared.length === 0, `ctx services read without inject: ${unDeclared.join(', ')}`);
+}
+
+// ---------------------------------------------------------------------------
+// 4e. Action layer through the real plugin wiring: a host that accepts the call
+//     but refuses to archive must still be reported, not swallowed.
+// ---------------------------------------------------------------------------
+const registrations = new Map();
+const noticeKeys = [];
+let archivedState = [];
+const hostCalls = [];
+const fakeWorkspaces = {
+  list: { getSnapshot: () => ({ archivedSessionIds: archivedState, items: [], pinnedSessionIds: [] }) },
+};
+const fakeCtx = {
+  effect: (run) => {
+    run();
+    return () => {};
+  },
+  locale: { register: () => () => {}, bind: () => (key) => key, subscribe: () => () => {} },
+  slots: {
+    inject: (name, register) => {
+      register();
+      return () => {};
+    },
+    register: (options) => {
+      registrations.set(options.name, options);
+      return () => {};
+    },
+    entriesOfSlot: () => [],
+    subscribe: () => () => {},
+  },
+  layout: {
+    panelInfo: { getSnapshot: () => null, subscribe: () => () => {} },
+    toggleSidebar: () => hostCalls.push(['toggleSidebar']),
+    selectPanel: (id) => hostCalls.push(['selectPanel', id]),
+  },
+  uiWorkspace: {
+    openSession: (id) => {
+      hostCalls.push(['openSession', id]);
+      return Promise.resolve();
+    },
+    pinSession: () => Promise.resolve({ ok: true }),
+    unpinSession: () => Promise.resolve({ ok: true }),
+    archiveSession: (id, options) => {
+      hostCalls.push(['archiveSession', id, options]);
+      return Promise.resolve();
+    },
+    startSession: () => {},
+    clearMain: () => {},
+  },
+  get: (name) => {
+    if (name === 'workspaces') return fakeWorkspaces;
+    if (name === 'sessions') {
+      return { using: () => Promise.resolve({ ok: true }) };
+    }
+    return undefined;
+  },
+};
+components.apply(fakeCtx);
+const sidebarOptions = registrations.get('sidebar');
+check(!!sidebarOptions && typeof sidebarOptions.inject === 'function', 'the sidebar slot no longer injects its actions');
+const sidebarProps = sidebarOptions ? sidebarOptions.inject() : {};
+const noticeSource = sidebarProps.hooks && sidebarProps.hooks.notices;
+check(!!noticeSource, 'the sidebar no longer exposes a notice channel');
+if (noticeSource) {
+  const read = () => noticeSource.getSnapshot();
+  noticeSource.subscribe(() => {
+    const current = read();
+    if (current) noticeKeys.push(current.key);
+  });
+
+  // The host "succeeds" without archiving: this must surface, not disappear.
+  const realError = console.error;
+  console.error = () => {};
+  await sidebarProps.archiveSession('s1', {}).then(
+    () => failures.push('a host that did not archive was reported as success'),
+    (error) => check(error.code === 'archive/noop', `unexpected refusal code: ${error && error.code}`),
+  );
+  check(noticeKeys.includes('error.archive'), 'a refused archive left no notice on screen');
+  console.error = realError;
+
+  // A host that really archives resolves and stays quiet.
+  archivedState = ['s2'];
+  const before = noticeKeys.length;
+  await sidebarProps.archiveSession('s2', {});
+  check(noticeKeys.length === before, 'a successful archive still reported a failure');
+}
+
+// ---------------------------------------------------------------------------
+// 4f. Press every button on every surface: no handler may reference a name the
+//     component never bound.
+// ---------------------------------------------------------------------------
+if (shell !== undefined) {
+  const pressed = pressEveryButton(shell, 'SidebarShell');
+  check(pressed >= 1, 'SidebarShell exposed no interactive handlers');
+}
+if (inline !== undefined) {
+  const pressed = pressEveryButton(inline, 'RecentInlineGroup');
+  check(pressed > 5, `RecentInlineGroup exposed only ${pressed} interactive handlers`);
+}
+if (menu !== undefined) {
+  pressEveryButton(menu, 'RowMenu');
+}
+if (dialog !== undefined) {
+  pressEveryButton(dialog, 'RenameDialog');
+}
+if (confirm !== undefined) {
+  pressEveryButton(confirm, 'ConfirmDialog');
+}
+// ---------------------------------------------------------------------------
 // 5. RecentSessionsPage — the full-session panel still maps sessions to groups.
 // ---------------------------------------------------------------------------
 const pageProps = {
   t,
+  useNotices: (selector) => selector(null),
   toggleFavorite: () => {},
   addFavorite: () => {},
   insertFavoriteBefore: () => {},
@@ -289,6 +546,8 @@ if (page !== undefined) {
   check(sections.length > 0, 'RecentSessionsPage rendered no category sections');
   const text = nodesOf(page, () => true).map(textOf).join(' ');
   check(text.includes('Alpha') && text.includes('Beta'), 'RecentSessionsPage dropped the session rows');
+  const pressed = pressEveryButton(page, 'RecentSessionsPage');
+  check(pressed > 3, `RecentSessionsPage exposed only ${pressed} interactive handlers`);
 }
 
 // ---------------------------------------------------------------------------
@@ -310,4 +569,5 @@ if (failures.length) {
   for (const failure of failures) console.error('  - ' + failure);
   process.exit(1);
 }
-console.log('smoke-render: OK (sidebar shell, inline section, row menu, rename dialog, zh labels)');
+console.log('smoke-render: OK (sidebar shell, inline section, row menu, rename dialog, panel page, action wiring)');
+process.exit(0);
