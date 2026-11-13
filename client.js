@@ -68,6 +68,19 @@ window.__ModuleLoader__.load({
       'dot.running': '运行中',
       'dot.unread': '已运行完成，尚未查看',
       'dot.idle': '空闲',
+      'action.pin': '置顶',
+      'action.unpin': '取消置顶',
+      'action.moveToTop': '置顶到最前',
+      'action.archive': '归档会话',
+      'action.unarchive': '取消归档',
+      'action.copyId': '复制会话 ID',
+      'action.more': '更多操作',
+      'action.reveal': '在工作区中定位',
+      'action.rename': '重命名',
+      'rename.title': '重命名会话',
+      'rename.placeholder': '输入新的会话标题',
+      'rename.confirm': '确定',
+      'rename.cancel': '取消',
       'action.favorite': '收藏会话',
       'action.unfavorite': '取消收藏',
       'action.open': '打开会话',
@@ -122,6 +135,19 @@ window.__ModuleLoader__.load({
       'dot.running': 'Running',
       'dot.unread': 'Finished running, not viewed yet',
       'dot.idle': 'Idle',
+      'action.pin': 'Pin',
+      'action.unpin': 'Unpin',
+      'action.moveToTop': 'Move to top',
+      'action.archive': 'Archive',
+      'action.unarchive': 'Unarchive',
+      'action.copyId': 'Copy session ID',
+      'action.more': 'More actions',
+      'action.reveal': 'Reveal in Workspaces',
+      'action.rename': 'Rename',
+      'rename.title': 'Rename session',
+      'rename.placeholder': 'Enter a new session title',
+      'rename.confirm': 'Save',
+      'rename.cancel': 'Cancel',
       'action.favorite': 'Favorite session',
       'action.unfavorite': 'Remove from favorites',
       'action.open': 'Open session',
@@ -1547,6 +1573,16 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-rowBtn--on{color:var(--dsw-alias-brand-primary)}
 .drs-rowPinBtn--on{display:grid}
 .drs-menu{position:fixed;z-index:1000;min-width:184px;padding:4px;border-radius:10px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);box-shadow:0 10px 28px rgba(0,0,0,.28)}
+.drs-modalScrim{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:rgba(10,14,20,.32)}
+.drs-modal{width:min(420px,100%);display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:14px;background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l3);box-shadow:0 18px 48px rgba(0,0,0,.22)}
+.drs-modalTitle{font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)}
+.drs-modalInput{height:34px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l4);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;outline:none}
+.drs-modalInput:focus-visible{border-color:var(--dsw-alias-brand-primary)}
+.drs-modalActions{display:flex;justify-content:flex-end;gap:8px}
+.drs-modalBtn{height:30px;padding:0 14px;border:.5px solid var(--dsw-alias-border-l3);border-radius:8px;background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12.5px;cursor:pointer}
+.drs-modalBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.drs-modalBtn--primary{border-color:transparent;background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-on-brand,#fff)}
+.drs-modalBtn--primary:hover{filter:brightness(1.06)}
 .drs-menuItem{display:flex;align-items:center;width:100%;height:30px;padding:0 10px;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;line-height:18px;text-align:left;cursor:pointer}
 .drs-menuItem:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-menuSep{height:1px;margin:4px 6px;background:var(--dsw-alias-border-l1)}
@@ -1789,8 +1825,52 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
     }
 
     /** One row's "..." menu: the actions the shipped strip offers, plus this plugin's. */
+    /** A small modal for renaming a session: the shipped row's inline editor is not reachable from here. */
+    function RenameDialog(props) {
+      const { t, value, onChange, onCancel, onConfirm } = props;
+      const inputRef = React.useRef(null);
+      useEffect(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.select();
+        }
+      }, []);
+      return h(
+        'div',
+        {
+          className: 'drs-modalScrim',
+          onPointerDown: (event) => {
+            if (event.target === event.currentTarget) onCancel();
+          },
+        },
+        h(
+          'div',
+          { className: 'drs-modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('rename.title') },
+          h('div', { className: 'drs-modalTitle' }, t('rename.title')),
+          h('input', {
+            ref: inputRef,
+            className: 'drs-modalInput',
+            value,
+            placeholder: t('rename.placeholder'),
+            'aria-label': t('rename.title'),
+            onChange: (event) => onChange(event.target.value),
+            onKeyDown: (event) => {
+              if (event.key === 'Enter') onConfirm();
+              if (event.key === 'Escape') onCancel();
+            },
+          }),
+          h(
+            'div',
+            { className: 'drs-modalActions' },
+            h('button', { type: 'button', className: 'drs-modalBtn', onClick: onCancel }, t('rename.cancel')),
+            h('button', { type: 'button', className: 'drs-modalBtn drs-modalBtn--primary', onClick: onConfirm }, t('rename.confirm')),
+          ),
+        ),
+      );
+    }
+
     function RowMenu(props) {
-      const { t, menu, favorite, pinned, onClose, onFavorite, onMoveToTop, onPin, onUnpin, onArchive } = props;
+      const { t, menu, favorite, pinned, onClose, onFavorite, onMoveToTop, onPin, onUnpin, onArchive, onRename } = props;
       const ref = React.useRef(null);
       useEffect(() => {
         const onPointerDown = (event) => {
@@ -1831,6 +1911,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           style: { top: menu.top + 'px', left: menu.left + 'px' },
         },
         item('pin', t(pinned ? 'action.unpin' : 'action.pin'), pinned ? onUnpin : onPin),
+        onRename ? item('rename', t('action.rename'), onRename) : null,
         item('fav', t(favorite ? 'action.unfavorite' : 'action.favorite'), onFavorite),
         favorite ? item('top', t('action.moveToTop'), onMoveToTop) : null,
         h('div', { key: 'sep', className: 'drs-menuSep', role: 'separator' }),
@@ -1857,6 +1938,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
      */
     function RecentInlineGroup(props) {
       const { t, selectPanel, openSession, toggleFavorite, addFavorite, insertFavoriteBefore, moveFavoriteToFront, maxHeight } = props;
+      const renameSession = props.renameSession;
       const { useSessions, useSessionStatus, useWorkspaces, useFavorites } = props;
       const ids = useSessions((state) => state.ids);
       const byId = useSessions((state) => state.byId);
@@ -1877,6 +1959,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [pendingOpen, setPendingOpen] = useState(undefined);
       const [dragFold, setDragFold] = useState(false);
       const [rowMenu, setRowMenu] = useState(null);
+      const [renameTarget, setRenameTarget] = useState(null);
+      const [renameValue, setRenameValue] = useState('');
       const searchRef = React.useRef(null);
       const listRef = React.useRef(null);
       const savedScroll = React.useRef(readInlineScroll());
@@ -2329,6 +2413,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                 event.stopPropagation();
                 const rect = event.currentTarget.getBoundingClientRect();
                 setRowMenu({
+                  title: row.title,
                   id: row.id,
                   pinKey,
                   top: Math.min(rect.bottom + 4, window.innerHeight - 200),
@@ -2605,6 +2690,22 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               onPin: () => togglePin(rowMenu.pinKey, rowMenu.id),
               onUnpin: () => togglePin(rowMenu.pinKey, rowMenu.id),
               onArchive: () => archiveSession(rowMenu.id),
+              onRename: () => {
+                setRenameTarget({ id: rowMenu.id, title: rowMenu.title || '' });
+                setRenameValue(rowMenu.title || '');
+              },
+            })
+          : null,
+        renameTarget
+          ? h(RenameDialog, {
+              t,
+              value: renameValue,
+              onChange: setRenameValue,
+              onCancel: () => setRenameTarget(null),
+              onConfirm: () => {
+                if (renameSession) renameSession(renameTarget.id, renameValue);
+                setRenameTarget(null);
+              },
             })
           : null,
         effectiveOpen
@@ -2943,6 +3044,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                   pinSession,
                   unpinSession,
                   archiveSession,
+                  renameSession,
                   maxHeight: sectionMax,
                   useSessions,
                   useSessionStatus,
@@ -3046,6 +3148,22 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const pinSession = (sessionId) => runSessionAction('pin', () => ctx.uiWorkspace.pinSession(sessionId));
       const unpinSession = (sessionId) => runSessionAction('unpin', () => ctx.uiWorkspace.unpinSession(sessionId));
       const archiveSession = (sessionId) => runSessionAction('archive', () => ctx.uiWorkspace.archiveSession(sessionId));
+      /** Rename through the session controller, the same path the shipped row uses. */
+      const renameSession = (sessionId, title) => {
+        const next = String(title === undefined || title === null ? '' : title).trim();
+        if (!next) return;
+        if (!ctx.sessions || typeof ctx.sessions.using !== 'function') {
+          console.error('recent-sessions: rename unavailable (ctx.sessions missing)');
+          return;
+        }
+        runSessionAction('rename', () =>
+          ctx.sessions
+            .using(sessionId, { source: 'workspaceOperation' }, (reference) => reference.binding.session.rename(next))
+            .then((result) => {
+              if (result && result.ok === false) throw new Error((result.error && result.error.message) || 'rename rejected');
+            }),
+        );
+      };
       const startSession = (workspaceId, options) => {
         try {
           ctx.uiWorkspace.startSession(workspaceId, options);
@@ -3123,6 +3241,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               pinSession,
               unpinSession,
               archiveSession,
+              renameSession,
               hooks: {
                 panels: panels.source,
                 entryPins: pins.unpinned,
