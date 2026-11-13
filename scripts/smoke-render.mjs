@@ -247,6 +247,30 @@ if (dialog !== undefined) {
 }
 
 // ---------------------------------------------------------------------------
+// 4b. RenameDialog in flight / failed — the dialog must never close silently on
+//     a rejected rename (0.2.3/0.2.4 did exactly that).
+// ---------------------------------------------------------------------------
+const dialogPending = render('RenameDialog(pending)', () =>
+  components.RenameDialog({ t, value: 'Alpha', pending: true, onChange: () => {}, onCancel: () => {}, onConfirm: () => {} }),
+);
+if (dialogPending !== undefined) {
+  const buttons = nodesOf(dialogPending, (n) => n.type === 'button');
+  check(buttons.every((button) => button.props.disabled === true), 'RenameDialog keeps an enabled button while a rename is in flight');
+  check(buttons.some((button) => textOf(button) === 'rename.saving'), 'RenameDialog lost its saving label');
+  const input = nodesOf(dialogPending, (n) => n.type === 'input')[0];
+  check(!!input && input.props.disabled === true, 'RenameDialog keeps the input editable while saving');
+}
+
+const dialogError = render('RenameDialog(error)', () =>
+  components.RenameDialog({ t, value: 'Alpha', error: 'boom', onChange: () => {}, onCancel: () => {}, onConfirm: () => {} }),
+);
+if (dialogError !== undefined) {
+  const alerts = nodesOf(dialogError, (n) => n.props && n.props.role === 'alert');
+  check(alerts.length === 1, 'RenameDialog does not surface a rename failure');
+  check(alerts[0] && textOf(alerts[0]).includes('rename.failed'), 'RenameDialog failure text is not localised');
+}
+
+// ---------------------------------------------------------------------------
 // 5. RecentSessionsPage — the full-session panel still maps sessions to groups.
 // ---------------------------------------------------------------------------
 const pageProps = {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.5 — 2026-11-13
+
+- 修复：**重命名对话框点「确定」没反应** —— 插件没有声明 `sessions` 服务（官方 `ui-workspace` 的 `inject` 里有 `sessions`），`renameSession` 走到 `ctx.sessions` 判空就 return，错误只进 Console、界面毫无反馈。现在 `inject` 补上 `sessions`，并按官方写法用 `ctx.get("sessions")` 取控制器。
+- 调整：重命名失败不再静默 —— 对话框保持打开，按钮进「保存中…」并禁用输入，失败原因以红字显示在对话框里（`rename.failed` / `rename.noController`，中英齐备）；成功才关闭。官方 `RenameForm` 也是这个行为。
+
 ## 0.2.4 — 2026-11-13
 
 - 修复：**整个侧栏回退成「侧栏组件出错，已切回官方会话列表」** —— 0.2.3 把 `renameSession` 传给了「最近会话」分区，却漏在 `SidebarShell` 的 props 解构里，渲染时抛 `ReferenceError: renameSession is not defined`，被顶层 Guard 接住后整列降级。补上解构即恢复；0.2.3 的菜单中文与重命名因此从未在真实 UI 生效过。

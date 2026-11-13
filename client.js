@@ -81,6 +81,9 @@ window.__ModuleLoader__.load({
       'rename.placeholder': '输入新的会话标题',
       'rename.confirm': '确定',
       'rename.cancel': '取消',
+      'rename.saving': '保存中…',
+      'rename.failed': '重命名失败：{message}',
+      'rename.noController': '会话控制器不可用，无法重命名。',
       'action.favorite': '收藏会话',
       'action.unfavorite': '取消收藏',
       'action.open': '打开会话',
@@ -148,6 +151,9 @@ window.__ModuleLoader__.load({
       'rename.placeholder': 'Enter a new session title',
       'rename.confirm': 'Save',
       'rename.cancel': 'Cancel',
+      'rename.saving': 'Saving…',
+      'rename.failed': 'Rename failed: {message}',
+      'rename.noController': 'The session controller is unavailable, so this session cannot be renamed.',
       'action.favorite': 'Favorite session',
       'action.unfavorite': 'Remove from favorites',
       'action.open': 'Open session',
@@ -1583,6 +1589,10 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 .drs-modalBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-modalBtn--primary{border-color:transparent;background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-on-brand,#fff)}
 .drs-modalBtn--primary:hover{filter:brightness(1.06)}
+.drs-modalBtn:disabled,.drs-modalInput:disabled{opacity:.55;cursor:default}
+.drs-modalBtn:disabled:hover{background:none}
+.drs-modalBtn--primary:disabled:hover{filter:none}
+.drs-modalError{font-size:12px;line-height:18px;color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere}
 .drs-menuItem{display:flex;align-items:center;width:100%;height:30px;padding:0 10px;border:0;border-radius:6px;background:none;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;line-height:18px;text-align:left;cursor:pointer}
 .drs-menuItem:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .drs-menuSep{height:1px;margin:4px 6px;background:var(--dsw-alias-border-l1)}
@@ -1824,10 +1834,13 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       );
     }
 
-    /** One row's "..." menu: the actions the shipped strip offers, plus this plugin's. */
-    /** A small modal for renaming a session: the shipped row's inline editor is not reachable from here. */
+    /**
+     * A small modal for renaming a session: the shipped row's inline editor is not
+     * reachable from here, so this mirrors its form — draft, disabled while saving,
+     * and the failure message surfaced instead of swallowed.
+     */
     function RenameDialog(props) {
-      const { t, value, onChange, onCancel, onConfirm } = props;
+      const { t, value, onChange, onCancel, onConfirm, pending, error } = props;
       const inputRef = React.useRef(null);
       useEffect(() => {
         if (inputRef.current) {
@@ -1835,12 +1848,13 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           inputRef.current.select();
         }
       }, []);
+      const blocked = pending === true || String(value || '').trim() === '';
       return h(
         'div',
         {
           className: 'drs-modalScrim',
           onPointerDown: (event) => {
-            if (event.target === event.currentTarget) onCancel();
+            if (event.target === event.currentTarget && !pending) onCancel();
           },
         },
         h(
@@ -1853,22 +1867,36 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
             value,
             placeholder: t('rename.placeholder'),
             'aria-label': t('rename.title'),
+            disabled: pending === true,
             onChange: (event) => onChange(event.target.value),
             onKeyDown: (event) => {
-              if (event.key === 'Enter') onConfirm();
-              if (event.key === 'Escape') onCancel();
+              if (event.key === 'Enter' && !blocked) onConfirm();
+              if (event.key === 'Escape' && !pending) onCancel();
             },
           }),
+          error
+            ? h('div', { className: 'drs-modalError', role: 'alert' }, t('rename.failed', { message: error }))
+            : null,
           h(
             'div',
             { className: 'drs-modalActions' },
-            h('button', { type: 'button', className: 'drs-modalBtn', onClick: onCancel }, t('rename.cancel')),
-            h('button', { type: 'button', className: 'drs-modalBtn drs-modalBtn--primary', onClick: onConfirm }, t('rename.confirm')),
+            h('button', { type: 'button', className: 'drs-modalBtn', disabled: pending === true, onClick: onCancel }, t('rename.cancel')),
+            h(
+              'button',
+              {
+                type: 'button',
+                className: 'drs-modalBtn drs-modalBtn--primary',
+                disabled: blocked,
+                onClick: onConfirm,
+              },
+              pending === true ? t('rename.saving') : t('rename.confirm'),
+            ),
           ),
         ),
       );
     }
 
+    /** One row's "..." menu: the actions the shipped strip offers, plus this plugin's. */
     function RowMenu(props) {
       const { t, menu, favorite, pinned, onClose, onFavorite, onMoveToTop, onPin, onUnpin, onArchive, onRename } = props;
       const ref = React.useRef(null);
@@ -1961,6 +1989,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const [rowMenu, setRowMenu] = useState(null);
       const [renameTarget, setRenameTarget] = useState(null);
       const [renameValue, setRenameValue] = useState('');
+      const [renamePending, setRenamePending] = useState(false);
+      const [renameError, setRenameError] = useState(null);
       const searchRef = React.useRef(null);
       const listRef = React.useRef(null);
       const savedScroll = React.useRef(readInlineScroll());
@@ -2691,6 +2721,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
               onUnpin: () => togglePin(rowMenu.pinKey, rowMenu.id),
               onArchive: () => archiveSession(rowMenu.id),
               onRename: () => {
+                setRenameError(null);
+                setRenamePending(false);
                 setRenameTarget({ id: rowMenu.id, title: rowMenu.title || '' });
                 setRenameValue(rowMenu.title || '');
               },
@@ -2700,11 +2732,32 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           ? h(RenameDialog, {
               t,
               value: renameValue,
+              pending: renamePending,
+              error: renameError,
               onChange: setRenameValue,
-              onCancel: () => setRenameTarget(null),
-              onConfirm: () => {
-                if (renameSession) renameSession(renameTarget.id, renameValue);
+              onCancel: () => {
+                if (renamePending) return;
                 setRenameTarget(null);
+                setRenameError(null);
+              },
+              onConfirm: () => {
+                if (renamePending) return;
+                if (typeof renameSession !== 'function') {
+                  setRenameError(t('rename.noController'));
+                  return;
+                }
+                setRenamePending(true);
+                setRenameError(null);
+                Promise.resolve()
+                  .then(() => renameSession(renameTarget.id, renameValue))
+                  .then(() => {
+                    setRenamePending(false);
+                    setRenameTarget(null);
+                  })
+                  .catch((error) => {
+                    setRenamePending(false);
+                    setRenameError(error && error.message ? error.message : String(error));
+                  });
               },
             })
           : null,
@@ -3111,7 +3164,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
 
     // #region plugin
     /** Client services this plugin activates on. */
-    const inject = ['slots', 'layout', 'uiWorkspace', 'locale'];
+    const inject = ['slots', 'layout', 'uiWorkspace', 'locale', 'sessions'];
 
     /**
      * Register the sidebar entry, the panel it selects and the per-row star.
@@ -3149,21 +3202,31 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       const pinSession = (sessionId) => runSessionAction('pin', () => ctx.uiWorkspace.pinSession(sessionId));
       const unpinSession = (sessionId) => runSessionAction('unpin', () => ctx.uiWorkspace.unpinSession(sessionId));
       const archiveSession = (sessionId) => runSessionAction('archive', () => ctx.uiWorkspace.archiveSession(sessionId));
-      /** Rename through the session controller, the same path the shipped row uses. */
+      /**
+       * Rename through the session controller, the same path the shipped row uses.
+       * Returns the promise so the dialog can keep itself open when the host rejects
+       * the change; the console line stays for post-mortems.
+       */
       const renameSession = (sessionId, title) => {
         const next = String(title === undefined || title === null ? '' : title).trim();
-        if (!next) return;
-        if (!ctx.sessions || typeof ctx.sessions.using !== 'function') {
-          console.error('recent-sessions: rename unavailable (ctx.sessions missing)');
-          return;
+        if (!next) return Promise.resolve();
+        const sessions = typeof ctx.get === 'function' ? ctx.get('sessions') : ctx.sessions;
+        if (!sessions || typeof sessions.using !== 'function') {
+          const missing = new Error('session controller unavailable');
+          console.error('recent-sessions: rename unavailable (sessions service missing)', missing);
+          return Promise.reject(missing);
         }
-        runSessionAction('rename', () =>
-          ctx.sessions
-            .using(sessionId, { source: 'workspaceOperation' }, (reference) => reference.binding.session.rename(next))
-            .then((result) => {
-              if (result && result.ok === false) throw new Error((result.error && result.error.message) || 'rename rejected');
-            }),
-        );
+        return sessions
+          .using(sessionId, { source: 'workspaceOperation' }, (reference) => reference.binding.session.rename(next))
+          .then((result) => {
+            if (result && result.ok === false) {
+              throw new Error((result.error && result.error.message) || 'rename rejected');
+            }
+          })
+          .catch((error) => {
+            console.error('recent-sessions: rename failed', error);
+            throw error;
+          });
       };
       const startSession = (workspaceId, options) => {
         try {
