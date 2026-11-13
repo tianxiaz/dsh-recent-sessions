@@ -5,8 +5,8 @@
 
 <!-- handoff:provenance -->
 version: 1
-round: 2
-updated_utc: 20261113T0450Z
+round: 3
+updated_utc: 20261113T0500Z
 workspace: /Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions
 trigger: user-request
 occupancy: unavailable
@@ -21,15 +21,16 @@ status: complete
 <!-- /handoff:section -->
 
 <!-- handoff:section id=status -->
-- 已完成：0.2.4 修复（`be50416`）——0.2.3 把 `renameSession` 传给行内分区却没在 `SidebarShell` 解构，渲染抛 `ReferenceError: renameSession is not defined`，被顶层 Guard 接住后整列降级成「侧栏组件出错，已切回官方会话列表」；补上解构即恢复。**0.2.3 的菜单中文与重命名因此从未在真实 UI 生效过，那条 UI 验证当时不算通过。**
-- 已完成：`npm run smoke`（`scripts/smoke-render.mjs`）——离屏渲染侧栏外壳 / 行内分区 / 行菜单 / 重命名对话框 / 面板页，并校验 zh 文案；对 0.2.3 的 `client.js` 实测失败（`SidebarShell threw at render: renameSession is not defined`），对当前代码通过。
-- 已完成：`npm run market:merge`（`scripts/merge-market-history.mjs`）——把上一版索引的版本合并回来、按版本倒序、`parseMarketIndex` 校验；版本数变少即拒绝写入。本次产出 15 个版本（0.2.4 … 0.1.0），校验通过（`938ea33`）。
+- 已完成：0.2.5 修复（`4b3c661`）——重命名点「确定」没反应的原因是插件从未声明 `sessions` 服务（官方 `ui-workspace` 的 `inject` 里有 `sessions`），`renameSession` 在 `ctx.sessions` 判空处直接 return，错误只进 Console、对话框已关，所以看起来像死按钮。现在 `inject` 补 `sessions`、按官方写法用 `ctx.get('sessions')`，并让 `renameSession` 返回 promise：保存中禁用输入与按钮、失败红字留在对话框里、成功才关闭。
+- 已完成：0.2.4 修复（`be50416`）——0.2.3 把 `renameSession` 传给行内分区却没在 `SidebarShell` 解构，渲染抛 `ReferenceError`，整列降级成「侧栏组件出错，已切回官方会话列表」。用户已在 UI 确认 0.2.4 让侧栏回来、菜单变中文。
+- 已完成：`npm run smoke`（`scripts/smoke-render.mjs`）——离屏渲染侧栏外壳 / 行内分区 / 行菜单 / 重命名对话框（含保存中与失败态）/ 面板页，并校验 zh 文案；对 0.2.3 的 `client.js` 实测失败。
+- 已完成：`npm run market:merge`（`scripts/merge-market-history.mjs`）——合并旧版本 + 倒序 + `parseMarketIndex` 校验，版本数变少即拒绝写入。本次产出 16 个版本（0.2.5 … 0.1.0）。
 - 进行中：无。
-- 阻塞：`dsh-project-board` 重复声明子槽 `sidebar.workspaces.session.menu.item`，抛 `already declared`，连带 `ui-workspace` 未挂完 → 侧栏「工作区」可能仍空白。该项由另一个会话负责修，本会话不动它；但 0.2.3 的整列崩溃与它无关（已由 0.2.4 修掉）。
-- 待办：①0.2.4 真实 UI 验证（侧栏能渲染 + 菜单中文 + 重命名生效）；②若仍报错，看 Console 的 `recent-sessions: guarded subtree failed` 与 `recent-sessions: rename failed`；③面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；④`en` 词典缺 9 个 `page.*` 键；⑤小红书「用法」帖是否已发未确认；⑥掘金标题+封面改写已判定暂停。
-- 下一步：等用户回 0.2.4 的 UI 结果；通过则按需推进面板 v1.1，并把④补进下一次发版。
-- 验证：`npm run smoke` 必须 exit 0；`node /Users/zhangtianxiang/.dsh/skills/context-handoff/scripts/check_handoff.mjs check docs/HANDOFF.md` 必须 exit 0；`curl -s "https://tianxiaz.github.io/dsh-recent-sessions/market/index.json?v=$(date +%s)"` 首项应为 0.2.4。
-- 恢复检查点：代码基线 HEAD=`be50416`（0.2.4 发版提交，工作树干净）；其后只有 `938ea33`（market 索引）与一次 docs 提交，代码无变化 —— 新会话核对时，只要 `git log` 里 `be50416` 之后只有 market/docs 提交、且 `git status --short` 为空，即为一致。
+- 阻塞：`dsh-project-board` 重复声明子槽 `sidebar.workspaces.session.menu.item`，抛 `already declared`，连带 `ui-workspace` 未挂完 → 侧栏「工作区」可能仍空白。该项由另一个会话负责修，本会话不动它；0.2.4/0.2.5 的崩溃与重命名问题都已证明与它无关。
+- 待办：①0.2.5 真实 UI 验证（重命名生效；失败时对话框会出现红字原因）；②若仍失败，把对话框里的红字抄回来定位；③面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；④`en` 词典缺 9 个 `page.*` 键；⑤小红书「用法」帖是否已发未确认；⑥掘金标题+封面改写已判定暂停。
+- 下一步：等用户回 0.2.5 的 UI 结果（重命名是否生效；若失败，对话框现在会直接显示原因，把那段红字抄回来即可定位）。
+- 验证：`npm run smoke` 必须 exit 0；`node /Users/zhangtianxiang/.dsh/skills/context-handoff/scripts/check_handoff.mjs check docs/HANDOFF.md` 必须 exit 0；`curl -s "https://tianxiaz.github.io/dsh-recent-sessions/market/index.json?v=$(date +%s)"` 首项应为 0.2.5。
+- 恢复检查点：代码基线 HEAD=`4b3c661`（0.2.5 发版提交，工作树干净）；其后只有 market 索引与 docs 提交，代码无变化 —— 新会话核对时，只要 `git log` 里 `4b3c661` 之后只有 market/docs 提交、且 `git status --short` 为空，即为一致。
 <!-- /handoff:section -->
 
 <!-- handoff:section id=decisions -->
@@ -44,11 +45,13 @@ status: complete
 - 尝试过：把「定位」做成常驻按钮（太挤，用户要求改成悬停时状态点换准星）；`revealWorkspace` 曾误插进面板组件导致点击无反应（作用域错误，已修 `2086` 行处为分区内定义）。
 - 尝试过：发 0.2.3 时漏掉"把旧版本合并回索引"这一步，导致索引只剩 1 个版本（`cd1f19c`），已用 `git show HEAD~1:market/index.json` 恢复（`66381e3`）。**下次发版必须先合并再校验。**
 - 决定：发 0.2.3 时只做了组件级离屏渲染（`/tmp/harness5.mjs` 直接渲染 `RecentInlineGroup`），没有渲染外壳，于是"props 传了没解构"从头到尾没被跑到。**今后发版前跑 `npm run smoke`，它渲染 `SidebarShell`，这条路径能抓到这个 bug。**
+- 决定：插件要读的每个服务都必须写进 `inject`（`sessions` 就漏在这里），并且用 `ctx.get(name)` 取——官方 `ui-workspace`/`ui-agent-preset` 都是这个口径。判空 return 只能防崩，不能当功能实现。
+- 决定：失败必须回到界面上。凡是用户点了之后"没反应"的动作，都要在弹窗/行内留下可见结果，Console 只作复盘用。
 - 决定：把"合并旧版本 + 校验"从口头铁律固化成 `scripts/merge-market-history.mjs`，因为 `make-market-index.mjs` 只会产出单版本索引，靠人记得合并不可靠。
 <!-- /handoff:section -->
 
 <!-- handoff:section id=todo -->
-- 待办：①0.2.4 真实 UI 验证（侧栏能渲染 + 菜单中文 + 重命名生效）；②若仍报错，看 Console 的 `recent-sessions: guarded subtree failed` 与 `recent-sessions: rename failed`；③面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；④`en` 词典缺 9 个 `page.*` 键；⑤小红书「用法」帖是否已发未确认；⑥掘金标题+封面改写已判定暂停。
+- 待办：①0.2.5 真实 UI 验证（重命名生效；失败时对话框会出现红字原因）；②若仍失败，把对话框里的红字抄回来定位；③面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；④`en` 词典缺 9 个 `page.*` 键；⑤小红书「用法」帖是否已发未确认；⑥掘金标题+封面改写已判定暂停。
 <!-- /handoff:section -->
 
 <!-- handoff:section id=boundaries -->
@@ -65,11 +68,11 @@ status: complete
 <!-- /handoff:section -->
 
 <!-- handoff:section id=evidence -->
-- 提交：`938ea33` market 0.2.4（15 版本）、`be50416` 0.2.4 修复 + smoke + merge 脚本、`6eb243f`/`16404df` docs（上一轮交接）、`66381e3` market 修复（14 版本）、`cd1f19c` 误删索引版本、`130705a` 0.2.3 发版、`00d9081` 0.2.2、`357e9f9` 0.2.1。
+- 提交：`4b3c661` 0.2.5 修复（sessions 注入 + 失败可见）、`be50416` 0.2.4 修复 + smoke + merge 脚本、`938ea33` market 0.2.4（15 版本）、`6eb243f`/`16404df` docs（上一轮交接）、`66381e3` market 修复（14 版本）、`cd1f19c` 误删索引版本、`130705a` 0.2.3 发版、`00d9081` 0.2.2、`357e9f9` 0.2.1。
 - 文件：`client.js`（菜单 `RowMenu`、重命名 `renameSession` + `RenameDialog`、外壳 `SidebarShell` 第 ~2843 行解构）、`scripts/smoke-render.mjs`、`scripts/merge-market-history.mjs`、`market/index.json`、`docs/HANDOFF.md`。
-- 实测数字：`npm run smoke` 对 0.2.3 的 `client.js` exit 1（`SidebarShell threw at render: renameSession is not defined`），对 0.2.4 exit 0；`buildGroups(539 会话) ≈ 1.3–3.0 ms`；GitHub star 3、fork 0、issue 0（11-13）；掘金阅读 26（72h）、赞 0、评论 2；小红书（11-10）赞 26 / 收藏 29 / 评论 11；市场索引 15 个版本，`parseMarketIndex` 通过。
+- 实测数字：`npm run smoke` 对 0.2.3 的 `client.js` exit 1（`SidebarShell threw at render: renameSession is not defined`），对 0.2.4 exit 0；`buildGroups(539 会话) ≈ 1.3–3.0 ms`；GitHub star 3、fork 0、issue 0（11-13）；掘金阅读 26（72h）、赞 0、评论 2；小红书（11-10）赞 26 / 收藏 29 / 评论 11；市场索引 16 个版本（0.2.5 … 0.1.0），`parseMarketIndex` 通过；`npm run smoke` 覆盖重命名的保存中与失败态。
 <!-- /handoff:section -->
 
 <!-- handoff:section id=open_questions -->
-- 待裁决：0.2.4 在真实 UI 是否恢复（用户未验证）；小红书「用法」帖是否已发布；面板 v1.1 是否排进 0.3.0；推广是否继续只押小红书。
+- 待裁决：0.2.5 的重命名在真实 UI 是否生效（0.2.4 已确认侧栏与中文菜单恢复；重命名未验证）；小红书「用法」帖是否已发布；面板 v1.1 是否排进 0.3.0；推广是否继续只押小红书。
 <!-- /handoff:section -->
