@@ -2841,6 +2841,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
         pinSession,
         unpinSession,
         archiveSession,
+        renameSession,
         usePanels,
         useEntryPins,
         useEntryActions,

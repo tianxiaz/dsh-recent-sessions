@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4 — 2026-11-13
+
+- 修复：**整个侧栏回退成「侧栏组件出错，已切回官方会话列表」** —— 0.2.3 把 `renameSession` 传给了「最近会话」分区，却漏在 `SidebarShell` 的 props 解构里，渲染时抛 `ReferenceError: renameSession is not defined`，被顶层 Guard 接住后整列降级。补上解构即恢复；0.2.3 的菜单中文与重命名因此从未在真实 UI 生效过。
+- 新增：`npm run smoke`（`scripts/smoke-render.mjs`）—— 无浏览器离屏渲染侧栏外壳 / 行内分区 / 行菜单 / 重命名对话框，并校验菜单文案字典。「props 传了没解构」这一类会直接崩掉整列的改动，发版前必须让它失败。
+- 新增：`npm run market:merge`（`scripts/merge-market-history.mjs`）—— 生成索引后把旧版本合并回来、按版本倒序排列、并用官方 `parseMarketIndex` 校验；版本数变少就拒绝写入，`cd1f19c` 那种误删 13 个版本的事故不会再静默通过。
+
 ## 0.2.3 — 2026-11-13
 
 - 修复：行内「⋯」菜单显示的是字段名（`action.pin`、`action.archive` 等）而不是用户语言 —— 这些 `action.*` 文案键此前从未写进词典，`t()` 只能回退成键名。中英文案现已补齐（置顶 / 取消置顶 / 置顶到最前 / 归档会话 / 取消归档 / 复制会话 ID / 更多操作 / 在工作区中定位 / 重命名）。

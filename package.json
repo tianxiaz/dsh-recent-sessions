@@ -1,6 +1,6 @@
 {
   "name": "dsh-recent-sessions",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A Workspaces-native Recent sessions section for the DSH left sidebar: favorites, running, waiting-for-you and unread sessions at a glance, with a one-click ☆ on every session row, status dots, one-line collapse and in-section search.",
   "license": "MIT",
   "type": "module",
@@ -20,7 +20,9 @@
     "dsh": "^0.2.1-rc.5"
   },
   "scripts": {
-    "market": "node scripts/make-market-index.mjs"
+    "market": "node scripts/make-market-index.mjs",
+    "smoke": "node scripts/smoke-render.mjs",
+    "market:merge": "node scripts/merge-market-history.mjs"
   },
   "exports": {
     ".": "./index.js",
