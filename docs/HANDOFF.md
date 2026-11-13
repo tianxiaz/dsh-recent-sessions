@@ -71,7 +71,7 @@ status: complete
 - 路径：仓库 `/Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions`；市场索引 `market/index.json`；Pages 根 `https://tianxiaz.github.io/dsh-recent-sessions/`。
 - 服务：DSH web 由 `dsh-web.service` 托管（`sudo systemctl restart dsh-web.service` 会打断当前会话）；Pages 每次推送后约 1 分钟生效、CDN 缓存约 10 分钟。Web 配置 `~/.dsh/profiles/web/package.json` 里本插件是 `link:` 到本仓库，所以本机验证走的是工作树代码。
 - 命令：`npm run smoke`（发版前必跑）；`node scripts/make-market-index.mjs --source git --repo https://github.com/tianxiaz/dsh-recent-sessions --commit "$(git rev-parse HEAD)" --homepage https://github.com/tianxiaz/dsh-recent-sessions --out market/index.json && npm run market:merge`（合并 + 校验一步到位）；推送需 `export GIT_SSH_COMMAND=/Users/zhangtianxiang/Documents/dsh/.tmp/git-ssh/ssh-wrap`。
-- 定时提醒（交接时必须重建，schedule 是会话级的）：①`weekly` 推广数据双周复盘（周一/周四 10:00 Asia/Shanghai）；②`at` V2EX 分享创造窗口（2026-12-08 10:00 Asia/Shanghai）。另有两条 `after` 型（掘金 30 分钟/3 小时基线）已 inactive，不要迁。
+- 定时提醒：schedule 是会话级的，换会话必须重建 —— ①`weekly` 推广数据双周复盘（周一/周四 10:00 Asia/Shanghai）；②`at` V2EX 分享创造窗口（2026-12-08 10:00 Asia/Shanghai）。另有两条 `after` 型（掘金 30 分钟/3 小时基线）已 inactive，不要迁。
 - 依赖状态：`node --check client.js` 可用；`parseMarketIndex` 不在本仓库依赖里，`merge-market-history.mjs` 会依次尝试裸导入、`DSH_MARKET_INDEX_MODULE`、`<node 前缀>/lib/node_modules/@deepseek-ai/{dsh-plugin-market-index, dsh/node_modules/@deepseek-ai/dsh-plugin-market-index}`。
 <!-- /handoff:section -->
 
