@@ -27,7 +27,7 @@ status: complete
 - 待办：①U0.2.3 在真实 UI 验证（菜单中文 + 重命名生效）；②若验证失败，看 Console 的 `recent-sessions: rename failed` 并改用官方行同一引用来源；③面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；④小红书「用法」帖是否已发未确认；⑤掘金标题+封面改写已判定暂停。
 - 下一步：`cd /Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions && git log --oneline -3 && node -e "console.log(require('./package.json').version)"` 确认基线后，向用户索取 0.2.3 的 UI 验证结果。
 - 验证：`node /Users/zhangtianxiang/.dsh/skills/context-handoff/scripts/check_handoff.mjs check docs/HANDOFF.md` 必须 exit 0；`curl -s "https://tianxiaz.github.io/dsh-recent-sessions/market/index.json?v=$(date +%s)"` 首项应为 0.2.3。
-- 恢复检查点：HEAD=66381e3b3369af9bfb3a875fe1ea4d4fb2ee6dfe（工作树干净，`git status --short` 为空）
+- 恢复检查点：代码基线 HEAD=66381e3b3369af9bfb3a875fe1ea4d4fb2ee6dfe（工作树干净）；本交接物与 OPENING_PROMPT 在该基线之后的一次 docs 提交里（`git log --oneline -3` 可见），代码无变化 —— 新会话核对时，只要 `git log` 里 66381e3 之后只有 docs 提交、且 `git status --short` 为空，即为一致。
 <!-- /handoff:section -->
 
 <!-- handoff:section id=decisions -->
