@@ -5,8 +5,8 @@
 
 <!-- handoff:provenance -->
 version: 1
-round: 10
-updated_utc: 20261115T0955Z
+round: 11
+updated_utc: 20261115T1015Z
 workspace: /Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions
 trigger: user-request
 occupancy: unavailable
@@ -51,7 +51,7 @@ status: complete
 - 尝试过：发 0.2.3 时漏掉"把旧版本合并回索引"这一步，导致索引只剩 1 个版本（`cd1f19c`），已用 `git show HEAD~1:market/index.json` 恢复（`66381e3`）。**下次发版必须先合并再校验。**
 - 决定：发 0.2.3 时只做了组件级离屏渲染（`/tmp/harness5.mjs` 直接渲染 `RecentInlineGroup`），没有渲染外壳，于是"props 传了没解构"从头到尾没被跑到。**今后发版前跑 `npm run smoke`，它渲染 `SidebarShell`，这条路径能抓到这个 bug。**
 - 决定：**每版必须自报版本**。客户端 bundle 被宿主缓存，行为无法可靠反推版本；`BUILD` 常量 + `apply` 的一行 console 是唯一低成本判据，smoke 强制它与 package.json 同步。
-- 决定：**"已发布"不等于"已生效"**。本插件的客户端代码由宿主进程缓存，改文件必须重载插件或重启宿主的 web 进程；在此之前任何 UI 复测都在跑旧代码。每次 UI 复测前先比 `client.js` mtime 与 `dsh web` 启动时间。
+- 决定：**"已发布" ≠ "页面已加载"**。宿主会按 mtime 自动重建 bundle（见环境节），滞后的只有浏览器里那份文档；UI 复测前先确认页面加载的 `BUILD`，而不是比进程启动时间。
 - 决定：**定位/引用一律用标识，不用名字**。工作区标题不是键，「dsh」是「dsh-recent-sessions」的前缀，文本匹配必然误伤；宿主的 `data-row-key`（`session:` / `workspace:`）才是稳定标识。
 - 决定：**插件不另造一套与宿主冲突的状态**。置顶曾是插件私有的，导致与官方列表双向不一致；现在一律走宿主（`pinSession` + `pinnedSessionIds`）。判据：用户能在官方界面看到同一结果。
 - 决定：**破坏性后果要写进文案**。宿主的 stop 对定时提醒是删除（`stopSessionTasks` 里 `tasks.delete`），官方文案只说"不会自动继续"；我们改成"定时提醒会被移除，不会自动恢复"。
@@ -78,7 +78,7 @@ status: complete
 - 服务：DSH web 由 `dsh-web.service` 托管（`sudo systemctl restart dsh-web.service` 会打断当前会话）；Pages 每次推送后约 1 分钟生效、CDN 缓存约 10 分钟。Web 配置 `~/.dsh/profiles/web/package.json` 里本插件是 `link:` 到本仓库，所以本机验证走的是工作树代码。
 - 命令：`npm run smoke`（发版前必跑）；`node scripts/make-market-index.mjs --source git --repo https://github.com/tianxiaz/dsh-recent-sessions --commit "$(git rev-parse HEAD)" --homepage https://github.com/tianxiaz/dsh-recent-sessions --out market/index.json && npm run market:merge`（合并 + 校验一步到位）；推送需 `export GIT_SSH_COMMAND=/Users/zhangtianxiang/Documents/dsh/.tmp/git-ssh/ssh-wrap`。
 - 定时提醒：schedule 是会话级的，换会话必须重建 —— ①`weekly` 推广数据双周复盘（周一/周四 10:00 Asia/Shanghai）；②`at` V2EX 分享创造窗口（2026-12-08 10:00 Asia/Shanghai）。另有两条 `after` 型（掘金 30 分钟/3 小时基线）已 inactive，不要迁。
-- 生效条件（重要）：客户端 bundle 由宿主在**插件装载时**读取并缓存（`@deepseek-ai/dsh-client-modules` 的 `initialBundleSnapshot` / `reconcilePackage`），`link:` 到本仓库的改动**不会**被自动拾取，也没有文件监听。改完 `client.js` 必须二选一：①设置→插件 把本插件**停用再启用**（`setPluginEnabled` → `reload()` → 重读 bundle）；②重启 `dsh web`。然后再硬刷新页面。判据：`ps -eo pid,lstart,command | grep "dsh web"` 的启动时间 与 `ls -l --time-style=long-iso client.js` 的 mtime 对比——文件比进程新，就说明用户看到的是旧代码。
+- 生效条件（已实测修正）：宿主侧**会自动重建**——`client-hmr` 每 500ms stat 各插件 bundle（mtime/ctime/size），变化即 `clientModules.rebuilt(id)` 重读文件并更新图。本机实测：`dsh web` 进程仍是 11-14 06:38 启动的那一个，但 2026-11-15 10:09 从宿主拉到的 `dsh-recent-sessions/client.js` 已含 `BUILD = '0.2.11'`。**真正会滞后的是浏览器里已加载的页面**：改完 `client.js` 后只需硬刷新（`⌘⇧R`）。校验方法（无需浏览器）：从 journal 取带 token 的 URL → 带 cookie 拉 boot HTML → 找 `plugins/??…dsh-recent-sessions/client.js…&rev=…` → 用同 cookie 拉该 URL → grep `const BUILD`。
 - 依赖状态：`node --check client.js` 可用；`parseMarketIndex` 不在本仓库依赖里，`merge-market-history.mjs` 会依次尝试裸导入、`DSH_MARKET_INDEX_MODULE`、`<node 前缀>/lib/node_modules/@deepseek-ai/{dsh-plugin-market-index, dsh/node_modules/@deepseek-ai/dsh-plugin-market-index}`。
 <!-- /handoff:section -->
 
