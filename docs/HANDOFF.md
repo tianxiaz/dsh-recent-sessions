@@ -5,8 +5,8 @@
 
 <!-- handoff:provenance -->
 version: 1
-round: 8
-updated_utc: 20261115T0825Z
+round: 9
+updated_utc: 20261115T0845Z
 workspace: /Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions
 trigger: user-request
 occupancy: unavailable
@@ -21,6 +21,7 @@ status: complete
 <!-- /handoff:section -->
 
 <!-- handoff:section id=status -->
+- 阻塞（已定位）：0.2.10 的修复**尚未在运行中的宿主生效**。宿主 `dsh web` 启动于 2026-11-14 06:38，而 0.2.10 的 `client.js` 写于 2026-11-15 08:21；`dsh-client-modules` 在**插件装载时**读取 `client.js` 并缓存字节（`initialBundleSnapshot`），只在 `internal/plugin` 事件里 `reconcilePackage` 重读，且 `sourceKey` 未变时直接早退——对 `link:` 仓库**没有文件监听**。所以改了文件不重启/不重载插件，浏览器拿到的仍是旧 bundle。
 - 已完成：0.2.10 修复（`39d6ce4`）——「定位工作区」按文本子串匹配，`dsh` 会命中 `dsh-recent-sessions`。改为按宿主行标识：`[data-row-key="session:<id>"]` → `[data-row-key="workspace:<workspaceId>"]`；会话行现在携带所属 `workspaceId`（来自 `workspaceView.workspaceId`，与官方 `workspace:<group.key>` 同源）。无文本匹配残留，失配会提示。
 - 已完成：0.2.9 全量动作体检（`9720c42`）——置顶走宿主 `pinSession` + `pinnedSessionIds`；复制走官方 `writeClipboard` 原语。
 - 已完成：0.2.7/0.2.8（`ead2b09`/`1f8eeaf`）——忙碌会话归档拒绝契约 + 「停止并归档」确认 + 文案写清定时提醒会被移除。
@@ -30,7 +31,7 @@ status: complete
 - 已完成：`npm run market:merge`——合并 + 倒序 + `parseMarketIndex` 校验。本次 21 个版本（0.2.10 … 0.1.0）。
 - 进行中：无。
 - 阻塞：`dsh-project-board` 重复声明子槽 `sidebar.workspaces.session.menu.item`，抛 `already declared`，连带 `ui-workspace` 未挂完 → 侧栏「工作区」可能仍空白。由另一个会话负责，本会话不动它。
-- 待办：①0.2.10 真实 UI 验证（「飞书机器人-R1」的定位应落到 dsh，而不是 dsh-recent-sessions）；②0.2.9 置顶双向一致仍待验证；③面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；④`en` 词典缺 9 个 `page.*` 键；⑤归档后本分区无「撤销」入口，待定；⑥小红书/掘金推广判定暂停。
+- 待办：①**先让宿主重载本插件**（设置→插件 停用再启用，或重启 dsh web）再看 0.2.10 的定位是否修好——不改宿主状态，浏览器拿到的一直是旧 bundle；②0.2.10 真实 UI 验证（「飞书机器人-R1」定位应落到 dsh）；③0.2.9 置顶双向一致仍待验证；④面板 v1.1 未开始；⑤`en` 词典缺 9 个 `page.*` 键；⑥归档「撤销」入口待定。
 - 下一步：等用户回 0.2.10 的定位结果；再决定补归档「撤销」与面板 v1.1。
 - 验证：`npm run smoke` 必须 exit 0；`node /Users/zhangtianxiang/.dsh/skills/context-handoff/scripts/check_handoff.mjs check docs/HANDOFF.md` 必须 exit 0；`curl -s "https://tianxiaz.github.io/dsh-recent-sessions/market/index.json?v=$(date +%s)"` 首项应为 0.2.10。
 - 恢复检查点：代码基线 HEAD=`39d6ce4`（0.2.10 发版提交，工作树干净）；其后只有 market 索引与 docs 提交，代码无变化。
@@ -48,6 +49,7 @@ status: complete
 - 尝试过：把「定位」做成常驻按钮（太挤，用户要求改成悬停时状态点换准星）；`revealWorkspace` 曾误插进面板组件导致点击无反应（作用域错误，已修 `2086` 行处为分区内定义）。
 - 尝试过：发 0.2.3 时漏掉"把旧版本合并回索引"这一步，导致索引只剩 1 个版本（`cd1f19c`），已用 `git show HEAD~1:market/index.json` 恢复（`66381e3`）。**下次发版必须先合并再校验。**
 - 决定：发 0.2.3 时只做了组件级离屏渲染（`/tmp/harness5.mjs` 直接渲染 `RecentInlineGroup`），没有渲染外壳，于是"props 传了没解构"从头到尾没被跑到。**今后发版前跑 `npm run smoke`，它渲染 `SidebarShell`，这条路径能抓到这个 bug。**
+- 决定：**"已发布"不等于"已生效"**。本插件的客户端代码由宿主进程缓存，改文件必须重载插件或重启宿主的 web 进程；在此之前任何 UI 复测都在跑旧代码。每次 UI 复测前先比 `client.js` mtime 与 `dsh web` 启动时间。
 - 决定：**定位/引用一律用标识，不用名字**。工作区标题不是键，「dsh」是「dsh-recent-sessions」的前缀，文本匹配必然误伤；宿主的 `data-row-key`（`session:` / `workspace:`）才是稳定标识。
 - 决定：**插件不另造一套与宿主冲突的状态**。置顶曾是插件私有的，导致与官方列表双向不一致；现在一律走宿主（`pinSession` + `pinnedSessionIds`）。判据：用户能在官方界面看到同一结果。
 - 决定：**破坏性后果要写进文案**。宿主的 stop 对定时提醒是删除（`stopSessionTasks` 里 `tasks.delete`），官方文案只说"不会自动继续"；我们改成"定时提醒会被移除，不会自动恢复"。
@@ -60,7 +62,7 @@ status: complete
 <!-- /handoff:section -->
 
 <!-- handoff:section id=todo -->
-- 待办：①0.2.10 真实 UI 验证（「飞书机器人-R1」的定位应落到 dsh，而不是 dsh-recent-sessions）；②0.2.9 置顶双向一致仍待验证；③面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；④`en` 词典缺 9 个 `page.*` 键；⑤归档后本分区无「撤销」入口，待定；⑥小红书/掘金推广判定暂停。
+- 待办：①**先让宿主重载本插件**（设置→插件 停用再启用，或重启 dsh web）再看 0.2.10 的定位是否修好——不改宿主状态，浏览器拿到的一直是旧 bundle；②0.2.10 真实 UI 验证（「飞书机器人-R1」定位应落到 dsh）；③0.2.9 置顶双向一致仍待验证；④面板 v1.1 未开始；⑤`en` 词典缺 9 个 `page.*` 键；⑥归档「撤销」入口待定。
 <!-- /handoff:section -->
 
 <!-- handoff:section id=boundaries -->
@@ -74,6 +76,7 @@ status: complete
 - 服务：DSH web 由 `dsh-web.service` 托管（`sudo systemctl restart dsh-web.service` 会打断当前会话）；Pages 每次推送后约 1 分钟生效、CDN 缓存约 10 分钟。Web 配置 `~/.dsh/profiles/web/package.json` 里本插件是 `link:` 到本仓库，所以本机验证走的是工作树代码。
 - 命令：`npm run smoke`（发版前必跑）；`node scripts/make-market-index.mjs --source git --repo https://github.com/tianxiaz/dsh-recent-sessions --commit "$(git rev-parse HEAD)" --homepage https://github.com/tianxiaz/dsh-recent-sessions --out market/index.json && npm run market:merge`（合并 + 校验一步到位）；推送需 `export GIT_SSH_COMMAND=/Users/zhangtianxiang/Documents/dsh/.tmp/git-ssh/ssh-wrap`。
 - 定时提醒：schedule 是会话级的，换会话必须重建 —— ①`weekly` 推广数据双周复盘（周一/周四 10:00 Asia/Shanghai）；②`at` V2EX 分享创造窗口（2026-12-08 10:00 Asia/Shanghai）。另有两条 `after` 型（掘金 30 分钟/3 小时基线）已 inactive，不要迁。
+- 生效条件（重要）：客户端 bundle 由宿主在**插件装载时**读取并缓存（`@deepseek-ai/dsh-client-modules` 的 `initialBundleSnapshot` / `reconcilePackage`），`link:` 到本仓库的改动**不会**被自动拾取，也没有文件监听。改完 `client.js` 必须二选一：①设置→插件 把本插件**停用再启用**（`setPluginEnabled` → `reload()` → 重读 bundle）；②重启 `dsh web`。然后再硬刷新页面。判据：`ps -eo pid,lstart,command | grep "dsh web"` 的启动时间 与 `ls -l --time-style=long-iso client.js` 的 mtime 对比——文件比进程新，就说明用户看到的是旧代码。
 - 依赖状态：`node --check client.js` 可用；`parseMarketIndex` 不在本仓库依赖里，`merge-market-history.mjs` 会依次尝试裸导入、`DSH_MARKET_INDEX_MODULE`、`<node 前缀>/lib/node_modules/@deepseek-ai/{dsh-plugin-market-index, dsh/node_modules/@deepseek-ai/dsh-plugin-market-index}`。
 <!-- /handoff:section -->
 
