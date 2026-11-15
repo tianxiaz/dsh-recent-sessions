@@ -5,8 +5,8 @@
 
 <!-- handoff:provenance -->
 version: 1
-round: 11
-updated_utc: 20261115T1015Z
+round: 12
+updated_utc: 20261115T1332Z
 workspace: /Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions
 trigger: user-request
 occupancy: unavailable
@@ -22,6 +22,7 @@ status: complete
 
 <!-- handoff:section id=status -->
 - 阻塞（已定位）：0.2.10 的修复**尚未在运行中的宿主生效**。宿主 `dsh web` 启动于 2026-11-14 06:38，而 0.2.10 的 `client.js` 写于 2026-11-15 08:21；`dsh-client-modules` 在**插件装载时**读取 `client.js` 并缓存字节（`initialBundleSnapshot`），只在 `internal/plugin` 事件里 `reconcilePackage` 重读，且 `sourceKey` 未变时直接早退——对 `link:` 仓库**没有文件监听**。所以改了文件不重启/不重载插件，浏览器拿到的仍是旧 bundle。
+- 已完成并验收：0.2.11 的定位修复（用户 2026-11-15 确认「解决了」）——「飞书机器人-R1」定位落到 `dsh`；控制台 `client bundle 0.2.11` 可判加载版本。
 - 已完成：0.2.11（`d183c30`）——在 `client.js` 加 `BUILD` 常量并在 `apply` 打印 `recent-sessions: client bundle <BUILD>`；smoke 校验 BUILD 与 package.json 一致。以后「页面跑的是哪一版」看控制台一行即可。
 - 已完成：0.2.10 修复（`39d6ce4`）——「定位工作区」按文本子串匹配，`dsh` 会命中 `dsh-recent-sessions`。改为按宿主行标识：`[data-row-key="session:<id>"]` → `[data-row-key="workspace:<workspaceId>"]`；会话行现在携带所属 `workspaceId`（来自 `workspaceView.workspaceId`，与官方 `workspace:<group.key>` 同源）。无文本匹配残留，失配会提示。
 - 已完成：0.2.9 全量动作体检（`9720c42`）——置顶走宿主 `pinSession` + `pinnedSessionIds`；复制走官方 `writeClipboard` 原语。
@@ -32,7 +33,7 @@ status: complete
 - 已完成：`npm run market:merge`——合并 + 倒序 + `parseMarketIndex` 校验。本次 21 个版本（0.2.10 … 0.1.0）。
 - 进行中：无。
 - 阻塞：`dsh-project-board` 重复声明子槽 `sidebar.workspaces.session.menu.item`，抛 `already declared`，连带 `ui-workspace` 未挂完 → 侧栏「工作区」可能仍空白。由另一个会话负责，本会话不动它。
-- 待办：①让宿主重载本插件（设置→插件 停用再启用）或重启 dsh web，然后硬刷新，**看控制台 `recent-sessions: client bundle 0.2.11`** 确认已载新版；②0.2.10 的定位修复因此尚未在 UI 上验证过（「飞书机器人-R1」应落到 dsh）；③0.2.9 置顶双向一致待验证；④面板 v1.1 未开始；⑤`en` 词典缺 9 个 `page.*` 键；⑥归档「撤销」入口待定。
+- 待办：①需用户验证：0.2.9 的置顶是否与官方「工作区」双向一致（用户已确认 0.2.11 的定位修复生效，2026-11-15）；②面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；③`en` 词典缺 9 个 `page.*` 键；④归档后本分区无「撤销」入口，待定；⑤小红书/掘金推广已判定暂停。
 - 下一步：等用户回 0.2.10 的定位结果；再决定补归档「撤销」与面板 v1.1。
 - 验证：`npm run smoke` 必须 exit 0；`node /Users/zhangtianxiang/.dsh/skills/context-handoff/scripts/check_handoff.mjs check docs/HANDOFF.md` 必须 exit 0；`curl -s "https://tianxiaz.github.io/dsh-recent-sessions/market/index.json?v=$(date +%s)"` 首项应为 0.2.10。
 - 恢复检查点：代码基线 HEAD=`39d6ce4`（0.2.10 发版提交，工作树干净）；其后只有 market 索引与 docs 提交，代码无变化。
@@ -64,7 +65,7 @@ status: complete
 <!-- /handoff:section -->
 
 <!-- handoff:section id=todo -->
-- 待办：①让宿主重载本插件（设置→插件 停用再启用）或重启 dsh web，然后硬刷新，**看控制台 `recent-sessions: client bundle 0.2.11`** 确认已载新版；②0.2.10 的定位修复因此尚未在 UI 上验证过（「飞书机器人-R1」应落到 dsh）；③0.2.9 置顶双向一致待验证；④面板 v1.1 未开始；⑤`en` 词典缺 9 个 `page.*` 键；⑥归档「撤销」入口待定。
+- 待办：①需用户验证：0.2.9 的置顶是否与官方「工作区」双向一致（用户已确认 0.2.11 的定位修复生效，2026-11-15）；②面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；③`en` 词典缺 9 个 `page.*` 键；④归档后本分区无「撤销」入口，待定；⑤小红书/掘金推广已判定暂停。
 <!-- /handoff:section -->
 
 <!-- handoff:section id=boundaries -->
