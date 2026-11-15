@@ -579,8 +579,9 @@ window.__ModuleLoader__.load({
       const whereByPath = new Map();
       for (const workspace of workspaceItems || []) {
         const label = workspace.title || basename(workspace.path);
-        if (workspace.path) whereByPath.set(workspace.path, label);
-        for (const sessionId of workspace.sessionIds || []) whereBySession.set(sessionId, label);
+        const workspaceId = workspace.workspaceId || workspace.id;
+        if (workspace.path) whereByPath.set(workspace.path, { label, workspaceId });
+        for (const sessionId of workspace.sessionIds || []) whereBySession.set(sessionId, { label, workspaceId });
       }
 
       const rows = [];
@@ -607,15 +608,15 @@ window.__ModuleLoader__.load({
             (typeof summary.cwd === 'string' && whereByPath.has(summary.cwd));
           if (!attached) continue;
         }
+        const owned = whereBySession.get(sessionId) || (summary.cwd ? whereByPath.get(summary.cwd) : undefined) || {};
         const lastActive = typeof summary.updatedAt === 'number' ? summary.updatedAt : 0;
         const opened = (viewed && viewed[sessionId]) || 0;
         const justOpened = opened > 0 && now - opened <= VIEW_BOOST_MS ? opened : 0;
         rows.push({
           id: sessionId,
           title: summary.displayTitle || sessionId,
-          where:
-            whereBySession.get(sessionId) ||
-            (summary.cwd ? whereByPath.get(summary.cwd) || basename(summary.cwd) : ''),
+          where: owned.label || (summary.cwd ? basename(summary.cwd) : ''),
+          workspaceId: owned.workspaceId,
           updatedAt: Math.max(lastActive, justOpened),
           origin: summary.origin,
           pendingKind,
@@ -2528,25 +2529,8 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
       };
 
       /** Scroll the shipped browser to this session's workspace and expand it. */
-      const revealWorkspace = (label) => {
-        if (!label) return;
-        const root = document.querySelector('.drs-browserSlot');
-        const target = root
-          ? Array.from(root.querySelectorAll('[aria-expanded]')).find(
-              (element) => (element.textContent || '').indexOf(label) >= 0,
-            )
-          : undefined;
-        if (!target) {
-          if (notify) notify('error.locate', { name: label });
-          return;
-        }
-        if (target.getAttribute('aria-expanded') === 'false') {
-          try {
-            target.click();
-          } catch (error) {
-            /* the row may be re-rendered mid-click; nothing to do */
-          }
-        }
+      /** Scroll one element into view and flash it, like the shipped reveal. */
+      const flashRow = (target) => {
         try {
           target.scrollIntoView({ block: 'center', behavior: 'smooth' });
         } catch (error) {
@@ -2559,6 +2543,48 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
           target.style.outline = previous;
           target.style.outlineOffset = '';
         }, 1200);
+      };
+
+      /** `data-row-key` values are ids; quote them for the attribute selector. */
+      const rowSelector = (key) => '[data-row-key="' + String(key).replace(/["\\]/g, '\\$&') + '"]';
+
+      /**
+       * Reveal a session in the shipped browser by identity, never by name: the
+       * shipped rows key themselves (`session:<id>`, `workspace:<id>`), so a label
+       * that is a prefix of another label ("dsh" vs "dsh-recent-sessions") cannot
+       * win by being earlier in the DOM.
+       */
+      const revealWorkspace = (row) => {
+        const root = document.querySelector('.drs-browserSlot');
+        if (!root || !row) return;
+        if (row.id) {
+          const sessionRow = root.querySelector(rowSelector('session:' + row.id));
+          if (sessionRow) {
+            flashRow(sessionRow);
+            return;
+          }
+        }
+        if (row.workspaceId) {
+          const workspaceRow = root.querySelector(rowSelector('workspace:' + row.workspaceId));
+          if (workspaceRow) {
+            if (workspaceRow.getAttribute('aria-expanded') === 'false') {
+              try {
+                workspaceRow.click();
+              } catch (error) {
+                /* the row may be re-rendered mid-click; nothing to do */
+              }
+            }
+            flashRow(workspaceRow);
+            // Expanding renders the session row on the next paint; land on it then.
+            window.setTimeout(() => {
+              const later = document.querySelector('.drs-browserSlot');
+              const sessionRow = later ? later.querySelector(rowSelector('session:' + row.id)) : null;
+              if (sessionRow) flashRow(sessionRow);
+            }, 160);
+            return;
+          }
+        }
+        if (notify) notify('error.locate', { name: row.where || row.title || row.id });
       };
 
       const renderRow = (row, options) => {
@@ -2647,7 +2673,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
                     title: t('action.reveal') + ' · ' + row.where,
                     onClick: (event) => {
                       event.stopPropagation();
-                      revealWorkspace(row.where);
+                      revealWorkspace(row);
                     },
                   },
                   h(LocateIcon, { size: 13 }),

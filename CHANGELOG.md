@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.10 — 2026-11-15
+
+- 修复：**「定位工作区」会定位到名字相似的工作区** —— 旧实现遍历官方浏览器里带 `aria-expanded` 的行，用 `textContent.indexOf(label) >= 0` 做**子串**匹配，于是「dsh」会命中更早出现的「dsh-recent-sessions」。现在按宿主的行标识精确查找：先 `[data-row-key="session:<id>"]`（会话已展开时直接落在该行），否则 `[data-row-key="workspace:<workspaceId>"]`（展开并滚动到该工作区），`workspaceId` 来自工作区快照（`workspaceView.workspaceId`，与官方 `workspace:<group.key>` 同源）；不再有任何文本匹配。
+- 修复：会话行现在携带所属 `workspaceId`（此前只留了显示用的标签），因此定位不再依赖「标签能唯一定位」这个错误假设。
+- 新增：`npm run smoke` 覆盖「定位按 id 查找」——把选择器改回 `[aria-expanded]` 文本匹配会立刻失败。
+
 ## 0.2.9 — 2026-11-13
 
 - 修复：**「置顶」只在插件内生效，没有置顶到官方「工作区」** —— 行内和菜单的置顶走的是插件自己的 `categoryPins`（localStorage），既不会让会话在官方列表浮到前面，官方那边置顶过的会话在本分区也不显示为已置顶。现在置顶直接调宿主的 `pinSession` / `unpinSession`，状态与排序都读 `pinnedSessionIds`（与官方同一份数据、同一个顺序）；收藏仍保留手工顺序（置顶时前移并记住锚点，取消置顶时归位）。旧的 `dsh.recent-sessions.pins.v1` 本地存储不再使用。

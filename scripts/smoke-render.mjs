@@ -602,6 +602,73 @@ if (pinnedInline !== undefined) {
 }
 
 // ---------------------------------------------------------------------------
+// 4f2. Locate must match the shipped rows by id, never by label text: "dsh" is a
+//      prefix of "dsh-recent-sessions", so text matching reveals the wrong folder.
+// ---------------------------------------------------------------------------
+const locateFixture = (sessionId, workspaceId) => {
+  const asked = [];
+  const flashes = [];
+  const row = (key) => ({
+    key,
+    getAttribute: () => 'false',
+    click: () => {},
+    scrollIntoView: () => flashes.push(key),
+    style: {},
+    textContent: '',
+  });
+  const root = {
+    querySelector: (selector) => {
+      asked.push(selector);
+      if (selector === '[data-row-key="session:' + sessionId + '"]') return null;
+      if (selector === '[data-row-key="workspace:' + workspaceId + '"]') return row('workspace:' + workspaceId);
+      return null;
+    },
+  };
+  return { root, asked, flashes, row };
+};
+
+const locateInline = render('RecentInlineGroup(locate)', () =>
+  components.RecentInlineGroup({
+    ...inlineProps,
+    useWorkspaces: (selector) => selector({
+      items: [
+        { workspaceId: 'w-dsh', title: 'dsh', path: '/Users/x/dsh', sessionIds: ['s1'], createdAt: '2026-01-01T00:00:00Z' },
+        { workspaceId: 'w-plugin', title: 'dsh-recent-sessions', path: '/Users/x/dsh/plugins/dsh-recent-sessions', sessionIds: ['s2'], createdAt: '2026-01-02T00:00:00Z' },
+      ],
+      archivedSessionIds: [],
+      pinnedSessionIds: [],
+    }),
+  }),
+);
+if (locateInline !== undefined) {
+  const locateButtons = nodesOf(locateInline, (n) => n.props && String(n.props.className || '').includes('drs-rowLocate'));
+  check(locateButtons.length === 2, 'rows lost their locate button');
+  const fixture = locateFixture('s1', 'w-dsh');
+  const original = fakeDocument.querySelector;
+  fakeDocument.querySelector = (selector) => (selector === '.drs-browserSlot' ? fixture.root : original(selector));
+  const event = eventStub();
+  try {
+    locateButtons.forEach((button) => button.props.onClick(event));
+  } catch (error) {
+    failures.push('locate threw — ' + (error && error.message));
+  } finally {
+    fakeDocument.querySelector = original;
+  }
+  check(
+    fixture.asked.some((selector) => selector === '[data-row-key="session:s1"]'),
+    'locate did not look for the session row by id',
+  );
+  check(
+    fixture.asked.some((selector) => selector === '[data-row-key="workspace:w-dsh"]'),
+    'locate did not fall back to the owning workspace id',
+  );
+  check(
+    fixture.asked.every((selector) => !selector.includes('aria-expanded')),
+    'locate still falls back to text matching',
+  );
+}
+
+// ---------------------------------------------------------------------------
 // 4f. Press every button on every surface: no handler may reference a name the
 //     component never bound.
 // ---------------------------------------------------------------------------
