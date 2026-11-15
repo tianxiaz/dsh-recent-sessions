@@ -32,6 +32,12 @@ window.__ModuleLoader__.load({
       writeClipboard = undefined;
     }
 
+    /**
+     * Build marker. The Host caches this file at plugin load, so "which build is
+     * the browser running" is otherwise unanswerable; keep it equal to
+     * package.json#version (scripts/smoke-render.mjs enforces that).
+     */
+    const BUILD = '0.2.11';
     /** Locale namespace owned by this plugin. */
     const NS = 'recent-sessions';
     /** Sidebar entry id — also the `main` key that renders the panel. */
@@ -3445,6 +3451,7 @@ html[data-platform="darwin"] .drs-shell{background:transparent}
      * @param ctx - the browser plugin context.
      */
     function apply(ctx) {
+      console.info('recent-sessions: client bundle ' + BUILD);
       ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'recent-sessions: dictionaries');
       const t = ctx.locale.bind(NS);
       const favorites = createFavorites();

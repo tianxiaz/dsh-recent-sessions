@@ -690,6 +690,20 @@ if (confirm !== undefined) {
   pressEveryButton(confirm, 'ConfirmDialog');
 }
 // ---------------------------------------------------------------------------
+// 4g. Build marker — the console line is how a running page says which bundle
+//     it loaded, so it must match the released version.
+// ---------------------------------------------------------------------------
+const manifestVersion = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).version;
+const buildMatch = source.match(/const BUILD = '([^']+)'/);
+check(!!buildMatch, 'client bundle has no BUILD marker');
+if (buildMatch) {
+  check(
+    buildMatch[1] === manifestVersion,
+    `BUILD ${buildMatch[1]} does not match package.json ${manifestVersion}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
 // 5. RecentSessionsPage — the full-session panel still maps sessions to groups.
 // ---------------------------------------------------------------------------
 const pageProps = {

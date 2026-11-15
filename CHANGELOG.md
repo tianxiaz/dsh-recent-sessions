@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.11 — 2026-11-15
+
+- 新增：**加载版本标记** —— `client.js` 顶部有 `BUILD` 常量，`apply` 时打印 `recent-sessions: client bundle <BUILD>`。宿主在插件装载时缓存客户端 bundle，改文件不会自动进浏览器；以前只能靠"行为对不对"猜页面跑的是哪一版，现在控制台一行即可判定。`npm run smoke` 会校验 `BUILD` 与 `package.json#version` 一致，防止漂移。
+- 说明：本机文件在 0.2.10 就已是最新，「没更新」的是**宿主/浏览器里已加载的那份副本**；定位修复（0.2.10）要在插件重载或宿主重启并刷新后才生效。
+
 ## 0.2.10 — 2026-11-15
 
 - 修复：**「定位工作区」会定位到名字相似的工作区** —— 旧实现遍历官方浏览器里带 `aria-expanded` 的行，用 `textContent.indexOf(label) >= 0` 做**子串**匹配，于是「dsh」会命中更早出现的「dsh-recent-sessions」。现在按宿主的行标识精确查找：先 `[data-row-key="session:<id>"]`（会话已展开时直接落在该行），否则 `[data-row-key="workspace:<workspaceId>"]`（展开并滚动到该工作区），`workspaceId` 来自工作区快照（`workspaceView.workspaceId`，与官方 `workspace:<group.key>` 同源）；不再有任何文本匹配。
