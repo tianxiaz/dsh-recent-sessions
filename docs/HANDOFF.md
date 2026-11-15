@@ -5,8 +5,8 @@
 
 <!-- handoff:provenance -->
 version: 1
-round: 9
-updated_utc: 20261115T0845Z
+round: 10
+updated_utc: 20261115T0955Z
 workspace: /Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions
 trigger: user-request
 occupancy: unavailable
@@ -22,6 +22,7 @@ status: complete
 
 <!-- handoff:section id=status -->
 - 阻塞（已定位）：0.2.10 的修复**尚未在运行中的宿主生效**。宿主 `dsh web` 启动于 2026-11-14 06:38，而 0.2.10 的 `client.js` 写于 2026-11-15 08:21；`dsh-client-modules` 在**插件装载时**读取 `client.js` 并缓存字节（`initialBundleSnapshot`），只在 `internal/plugin` 事件里 `reconcilePackage` 重读，且 `sourceKey` 未变时直接早退——对 `link:` 仓库**没有文件监听**。所以改了文件不重启/不重载插件，浏览器拿到的仍是旧 bundle。
+- 已完成：0.2.11（`d183c30`）——在 `client.js` 加 `BUILD` 常量并在 `apply` 打印 `recent-sessions: client bundle <BUILD>`；smoke 校验 BUILD 与 package.json 一致。以后「页面跑的是哪一版」看控制台一行即可。
 - 已完成：0.2.10 修复（`39d6ce4`）——「定位工作区」按文本子串匹配，`dsh` 会命中 `dsh-recent-sessions`。改为按宿主行标识：`[data-row-key="session:<id>"]` → `[data-row-key="workspace:<workspaceId>"]`；会话行现在携带所属 `workspaceId`（来自 `workspaceView.workspaceId`，与官方 `workspace:<group.key>` 同源）。无文本匹配残留，失配会提示。
 - 已完成：0.2.9 全量动作体检（`9720c42`）——置顶走宿主 `pinSession` + `pinnedSessionIds`；复制走官方 `writeClipboard` 原语。
 - 已完成：0.2.7/0.2.8（`ead2b09`/`1f8eeaf`）——忙碌会话归档拒绝契约 + 「停止并归档」确认 + 文案写清定时提醒会被移除。
@@ -31,7 +32,7 @@ status: complete
 - 已完成：`npm run market:merge`——合并 + 倒序 + `parseMarketIndex` 校验。本次 21 个版本（0.2.10 … 0.1.0）。
 - 进行中：无。
 - 阻塞：`dsh-project-board` 重复声明子槽 `sidebar.workspaces.session.menu.item`，抛 `already declared`，连带 `ui-workspace` 未挂完 → 侧栏「工作区」可能仍空白。由另一个会话负责，本会话不动它。
-- 待办：①**先让宿主重载本插件**（设置→插件 停用再启用，或重启 dsh web）再看 0.2.10 的定位是否修好——不改宿主状态，浏览器拿到的一直是旧 bundle；②0.2.10 真实 UI 验证（「飞书机器人-R1」定位应落到 dsh）；③0.2.9 置顶双向一致仍待验证；④面板 v1.1 未开始；⑤`en` 词典缺 9 个 `page.*` 键；⑥归档「撤销」入口待定。
+- 待办：①让宿主重载本插件（设置→插件 停用再启用）或重启 dsh web，然后硬刷新，**看控制台 `recent-sessions: client bundle 0.2.11`** 确认已载新版；②0.2.10 的定位修复因此尚未在 UI 上验证过（「飞书机器人-R1」应落到 dsh）；③0.2.9 置顶双向一致待验证；④面板 v1.1 未开始；⑤`en` 词典缺 9 个 `page.*` 键；⑥归档「撤销」入口待定。
 - 下一步：等用户回 0.2.10 的定位结果；再决定补归档「撤销」与面板 v1.1。
 - 验证：`npm run smoke` 必须 exit 0；`node /Users/zhangtianxiang/.dsh/skills/context-handoff/scripts/check_handoff.mjs check docs/HANDOFF.md` 必须 exit 0；`curl -s "https://tianxiaz.github.io/dsh-recent-sessions/market/index.json?v=$(date +%s)"` 首项应为 0.2.10。
 - 恢复检查点：代码基线 HEAD=`39d6ce4`（0.2.10 发版提交，工作树干净）；其后只有 market 索引与 docs 提交，代码无变化。
@@ -49,6 +50,7 @@ status: complete
 - 尝试过：把「定位」做成常驻按钮（太挤，用户要求改成悬停时状态点换准星）；`revealWorkspace` 曾误插进面板组件导致点击无反应（作用域错误，已修 `2086` 行处为分区内定义）。
 - 尝试过：发 0.2.3 时漏掉"把旧版本合并回索引"这一步，导致索引只剩 1 个版本（`cd1f19c`），已用 `git show HEAD~1:market/index.json` 恢复（`66381e3`）。**下次发版必须先合并再校验。**
 - 决定：发 0.2.3 时只做了组件级离屏渲染（`/tmp/harness5.mjs` 直接渲染 `RecentInlineGroup`），没有渲染外壳，于是"props 传了没解构"从头到尾没被跑到。**今后发版前跑 `npm run smoke`，它渲染 `SidebarShell`，这条路径能抓到这个 bug。**
+- 决定：**每版必须自报版本**。客户端 bundle 被宿主缓存，行为无法可靠反推版本；`BUILD` 常量 + `apply` 的一行 console 是唯一低成本判据，smoke 强制它与 package.json 同步。
 - 决定：**"已发布"不等于"已生效"**。本插件的客户端代码由宿主进程缓存，改文件必须重载插件或重启宿主的 web 进程；在此之前任何 UI 复测都在跑旧代码。每次 UI 复测前先比 `client.js` mtime 与 `dsh web` 启动时间。
 - 决定：**定位/引用一律用标识，不用名字**。工作区标题不是键，「dsh」是「dsh-recent-sessions」的前缀，文本匹配必然误伤；宿主的 `data-row-key`（`session:` / `workspace:`）才是稳定标识。
 - 决定：**插件不另造一套与宿主冲突的状态**。置顶曾是插件私有的，导致与官方列表双向不一致；现在一律走宿主（`pinSession` + `pinnedSessionIds`）。判据：用户能在官方界面看到同一结果。
@@ -62,7 +64,7 @@ status: complete
 <!-- /handoff:section -->
 
 <!-- handoff:section id=todo -->
-- 待办：①**先让宿主重载本插件**（设置→插件 停用再启用，或重启 dsh web）再看 0.2.10 的定位是否修好——不改宿主状态，浏览器拿到的一直是旧 bundle；②0.2.10 真实 UI 验证（「飞书机器人-R1」定位应落到 dsh）；③0.2.9 置顶双向一致仍待验证；④面板 v1.1 未开始；⑤`en` 词典缺 9 个 `page.*` 键；⑥归档「撤销」入口待定。
+- 待办：①让宿主重载本插件（设置→插件 停用再启用）或重启 dsh web，然后硬刷新，**看控制台 `recent-sessions: client bundle 0.2.11`** 确认已载新版；②0.2.10 的定位修复因此尚未在 UI 上验证过（「飞书机器人-R1」应落到 dsh）；③0.2.9 置顶双向一致待验证；④面板 v1.1 未开始；⑤`en` 词典缺 9 个 `page.*` 键；⑥归档「撤销」入口待定。
 <!-- /handoff:section -->
 
 <!-- handoff:section id=boundaries -->
@@ -83,7 +85,7 @@ status: complete
 <!-- handoff:section id=evidence -->
 - 提交：`f9fca7d` market 0.2.10（21 版本）、`39d6ce4` 0.2.10（定位按行标识）、`8c35e14` market 0.2.9（20 版本）、`9720c42` 0.2.9（置顶走宿主 + 复制走原语）、`1f8eeaf` 0.2.8 文案、`c34f5db` market 0.2.7（18 版本）、`ead2b09` 0.2.7 修复（拒绝契约 + 停止并归档）、`8b8549f` market 0.2.6（17 版本）、`aaf36a4` 0.2.6 修复（归档绑定 + 动作层可见失败 + 按钮走查测试）、`4b3c661` 0.2.5 修复（sessions 注入 + 失败可见）、`be50416` 0.2.4 修复 + smoke + merge 脚本、`938ea33` market 0.2.4（15 版本）、`6eb243f`/`16404df` docs（上一轮交接）、`66381e3` market 修复（14 版本）、`cd1f19c` 误删索引版本、`130705a` 0.2.3 发版、`00d9081` 0.2.2、`357e9f9` 0.2.1。
 - 文件：`client.js`（菜单 `RowMenu`、重命名 `renameSession` + `RenameDialog`、外壳 `SidebarShell` 第 ~2843 行解构）、`scripts/smoke-render.mjs`、`scripts/merge-market-history.mjs`、`market/index.json`、`docs/HANDOFF.md`。
-- 实测数字：`npm run smoke` 对 0.2.3 的 `client.js` exit 1（`SidebarShell threw at render: renameSession is not defined`），对 0.2.4 exit 0；`buildGroups(539 会话) ≈ 1.3–3.0 ms`；GitHub star 3、fork 0、issue 0（11-13）；掘金阅读 26（72h）、赞 0、评论 2；小红书（11-10）赞 26 / 收藏 29 / 评论 11；市场索引 21 个版本（0.2.10 … 0.1.0），`parseMarketIndex` 通过；`npm run smoke` 对 0.2.5 的 `client.js` 输出 8 条失败、对当前代码 exit 0；实测报障原文：`workspace/session-active: … the session is active (schedule)`。
+- 实测数字：`npm run smoke` 对 0.2.3 的 `client.js` exit 1（`SidebarShell threw at render: renameSession is not defined`），对 0.2.4 exit 0；`buildGroups(539 会话) ≈ 1.3–3.0 ms`；GitHub star 3、fork 0、issue 0（11-13）；掘金阅读 26（72h）、赞 0、评论 2；小红书（11-10）赞 26 / 收藏 29 / 评论 11；市场索引 22 个版本（0.2.11 … 0.1.0），`parseMarketIndex` 通过；`npm run smoke` 对 0.2.5 的 `client.js` 输出 8 条失败、对当前代码 exit 0；实测报障原文：`workspace/session-active: … the session is active (schedule)`。
 <!-- /handoff:section -->
 
 <!-- handoff:section id=open_questions -->
