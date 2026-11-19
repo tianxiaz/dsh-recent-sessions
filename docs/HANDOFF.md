@@ -5,8 +5,8 @@
 
 <!-- handoff:provenance -->
 version: 1
-round: 12
-updated_utc: 20261115T1332Z
+round: 13
+updated_utc: 20261119T0248Z
 workspace: /Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions
 trigger: user-request
 occupancy: unavailable
@@ -23,6 +23,7 @@ status: complete
 <!-- handoff:section id=status -->
 - 阻塞（已定位）：0.2.10 的修复**尚未在运行中的宿主生效**。宿主 `dsh web` 启动于 2026-11-14 06:38，而 0.2.10 的 `client.js` 写于 2026-11-15 08:21；`dsh-client-modules` 在**插件装载时**读取 `client.js` 并缓存字节（`initialBundleSnapshot`），只在 `internal/plugin` 事件里 `reconcilePackage` 重读，且 `sourceKey` 未变时直接早退——对 `link:` 仓库**没有文件监听**。所以改了文件不重启/不重载插件，浏览器拿到的仍是旧 bundle。
 - 已完成并验收：0.2.11 的定位修复（用户 2026-11-15 确认「解决了」）——「飞书机器人-R1」定位落到 `dsh`；控制台 `client bundle 0.2.11` 可判加载版本。
+- 已完成（运营）：2026-11-19 停掉掘金渠道（7 天无增长 + 站方反爬导致数据不可自动获取），删除「推广数据双周复盘」定时提醒，复盘转手动；记录在 `docs/promotion-tracker.md`。
 - 已完成：0.2.11（`d183c30`）——在 `client.js` 加 `BUILD` 常量并在 `apply` 打印 `recent-sessions: client bundle <BUILD>`；smoke 校验 BUILD 与 package.json 一致。以后「页面跑的是哪一版」看控制台一行即可。
 - 已完成：0.2.10 修复（`39d6ce4`）——「定位工作区」按文本子串匹配，`dsh` 会命中 `dsh-recent-sessions`。改为按宿主行标识：`[data-row-key="session:<id>"]` → `[data-row-key="workspace:<workspaceId>"]`；会话行现在携带所属 `workspaceId`（来自 `workspaceView.workspaceId`，与官方 `workspace:<group.key>` 同源）。无文本匹配残留，失配会提示。
 - 已完成：0.2.9 全量动作体检（`9720c42`）——置顶走宿主 `pinSession` + `pinnedSessionIds`；复制走官方 `writeClipboard` 原语。
@@ -33,7 +34,7 @@ status: complete
 - 已完成：`npm run market:merge`——合并 + 倒序 + `parseMarketIndex` 校验。本次 21 个版本（0.2.10 … 0.1.0）。
 - 进行中：无。
 - 阻塞：`dsh-project-board` 重复声明子槽 `sidebar.workspaces.session.menu.item`，抛 `already declared`，连带 `ui-workspace` 未挂完 → 侧栏「工作区」可能仍空白。由另一个会话负责，本会话不动它。
-- 待办：①需用户验证：0.2.9 的置顶是否与官方「工作区」双向一致（用户已确认 0.2.11 的定位修复生效，2026-11-15）；②面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；③`en` 词典缺 9 个 `page.*` 键；④归档后本分区无「撤销」入口，待定；⑤小红书/掘金推广已判定暂停。
+- 待办：①需用户验证：0.2.9 的置顶是否与官方「工作区」双向一致（用户已确认 0.2.11 的定位修复生效，2026-11-15）；②面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；③`en` 词典缺 9 个 `page.*` 键；④归档后本分区无「撤销」入口，待定；⑤推广：掘金已停（11-19），小红书/即刻未再动，V2EX 待 12-08。
 - 下一步：等用户回 0.2.10 的定位结果；再决定补归档「撤销」与面板 v1.1。
 - 验证：`npm run smoke` 必须 exit 0；`node /Users/zhangtianxiang/.dsh/skills/context-handoff/scripts/check_handoff.mjs check docs/HANDOFF.md` 必须 exit 0；`curl -s "https://tianxiaz.github.io/dsh-recent-sessions/market/index.json?v=$(date +%s)"` 首项应为 0.2.10。
 - 恢复检查点：代码基线 HEAD=`39d6ce4`（0.2.10 发版提交，工作树干净）；其后只有 market 索引与 docs 提交，代码无变化。
@@ -65,7 +66,7 @@ status: complete
 <!-- /handoff:section -->
 
 <!-- handoff:section id=todo -->
-- 待办：①需用户验证：0.2.9 的置顶是否与官方「工作区」双向一致（用户已确认 0.2.11 的定位修复生效，2026-11-15）；②面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；③`en` 词典缺 9 个 `page.*` 键；④归档后本分区无「撤销」入口，待定；⑤小红书/掘金推广已判定暂停。
+- 待办：①需用户验证：0.2.9 的置顶是否与官方「工作区」双向一致（用户已确认 0.2.11 的定位修复生效，2026-11-15）；②面板 v1.1（多选批量归档 + 键盘 ↑↓/Enter/A/F//）未开始；③`en` 词典缺 9 个 `page.*` 键；④归档后本分区无「撤销」入口，待定；⑤推广：掘金已停（11-19），小红书/即刻未再动，V2EX 待 12-08。
 <!-- /handoff:section -->
 
 <!-- handoff:section id=boundaries -->
@@ -78,7 +79,7 @@ status: complete
 - 路径：仓库 `/Users/zhangtianxiang/Documents/dsh/plugins/dsh-recent-sessions`；市场索引 `market/index.json`；Pages 根 `https://tianxiaz.github.io/dsh-recent-sessions/`。
 - 服务：DSH web 由 `dsh-web.service` 托管（`sudo systemctl restart dsh-web.service` 会打断当前会话）；Pages 每次推送后约 1 分钟生效、CDN 缓存约 10 分钟。Web 配置 `~/.dsh/profiles/web/package.json` 里本插件是 `link:` 到本仓库，所以本机验证走的是工作树代码。
 - 命令：`npm run smoke`（发版前必跑）；`node scripts/make-market-index.mjs --source git --repo https://github.com/tianxiaz/dsh-recent-sessions --commit "$(git rev-parse HEAD)" --homepage https://github.com/tianxiaz/dsh-recent-sessions --out market/index.json && npm run market:merge`（合并 + 校验一步到位）；推送需 `export GIT_SSH_COMMAND=/Users/zhangtianxiang/Documents/dsh/.tmp/git-ssh/ssh-wrap`。
-- 定时提醒：schedule 是会话级的，换会话必须重建 —— ①`weekly` 推广数据双周复盘（周一/周四 10:00 Asia/Shanghai）；②`at` V2EX 分享创造窗口（2026-12-08 10:00 Asia/Shanghai）。另有两条 `after` 型（掘金 30 分钟/3 小时基线）已 inactive，不要迁。
+- 定时提醒：schedule 是会话级的，换会话必须重建 —— 目前只剩 `at` V2EX 分享创造窗口（2026-12-08 10:00 Asia/Shanghai）。「推广数据双周复盘」（周一/四 10:00）已于 2026-11-19 **删除**（掘金渠道同时停用，复盘转手动，见 `docs/promotion-tracker.md`）；另有两条 `after` 型（掘金 30 分钟/3 小时基线）已 inactive，不要迁。
 - 生效条件（已实测修正）：宿主侧**会自动重建**——`client-hmr` 每 500ms stat 各插件 bundle（mtime/ctime/size），变化即 `clientModules.rebuilt(id)` 重读文件并更新图。本机实测：`dsh web` 进程仍是 11-14 06:38 启动的那一个，但 2026-11-15 10:09 从宿主拉到的 `dsh-recent-sessions/client.js` 已含 `BUILD = '0.2.11'`。**真正会滞后的是浏览器里已加载的页面**：改完 `client.js` 后只需硬刷新（`⌘⇧R`）。校验方法（无需浏览器）：从 journal 取带 token 的 URL → 带 cookie 拉 boot HTML → 找 `plugins/??…dsh-recent-sessions/client.js…&rev=…` → 用同 cookie 拉该 URL → grep `const BUILD`。
 - 依赖状态：`node --check client.js` 可用；`parseMarketIndex` 不在本仓库依赖里，`merge-market-history.mjs` 会依次尝试裸导入、`DSH_MARKET_INDEX_MODULE`、`<node 前缀>/lib/node_modules/@deepseek-ai/{dsh-plugin-market-index, dsh/node_modules/@deepseek-ai/dsh-plugin-market-index}`。
 <!-- /handoff:section -->
